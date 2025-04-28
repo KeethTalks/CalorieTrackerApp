@@ -3,9 +3,9 @@
 
 ### 1. Project Setup & Configuration
 
-- [ ] Initialize React Native project with TypeScript
-- [ ] Set up Firebase project and configure services
-- [ ] Configure ESLint and Prettier for code quality
+- [X] Initialize React Native project with TypeScript
+- [X] Set up Firebase project and configure services
+- [X] Configure ESLint and Prettier for code quality
 - [ ] Set up CI/CD pipeline for automated testing and deployment
 - [ ] Configure app icons and splash screens
 - [ ] Set up navigation structure (React Navigation)
@@ -14,8 +14,8 @@
 ### 2. Authentication & User Management
 
 - [ ] Implement Firebase Authentication integration
-- [ ] Create user registration screens and flow
-- [ ] Build login screen and authentication logic
+- [X] Create user registration screens and flow
+- [X] Build login screen and authentication logic
 - [ ] Implement password reset functionality
 - [ ] Create user profile setup screens
 - [ ] Develop goal-setting interface for macros and calories

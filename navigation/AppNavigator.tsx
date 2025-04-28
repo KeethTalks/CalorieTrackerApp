@@ -1,12 +1,12 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useColorScheme } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
-import HomeScreen from '../screens/HomeScreen';
+import { BottomTabs } from './BottomTabs';
 import LoadingScreen from '../screens/LoadingScreen';
 
 export type RootStackParamList = {
@@ -19,39 +19,42 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const { user, loading } = useAuth();
-  const isDarkMode = useColorScheme() === 'dark';
+  const { isDark, colors } = useTheme();
+
+  const theme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+    },
+  };
 
   if (loading) {
     return <LoadingScreen />;
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={theme}>
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
-            backgroundColor: isDarkMode ? '#1c1c1e' : '#FFF7F2',
+            backgroundColor: colors.card,
           },
-          headerTintColor: isDarkMode ? '#fff' : '#FF5733',
+          headerTintColor: colors.text,
           headerTitleStyle: {
             fontWeight: 'bold',
           },
           headerShadowVisible: false,
           contentStyle: {
-            backgroundColor: isDarkMode ? '#000' : '#FFF7F2',
+            backgroundColor: colors.background,
           },
         }}
       >
-        {user ? (
-          // Authenticated Screens
-          <Stack.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{
-              headerShown: false,
-            }}
-          />
-        ) : (
+        {!user ? (
           // Authentication Screens
           <>
             <Stack.Screen
@@ -69,6 +72,15 @@ export default function AppNavigator() {
               }}
             />
           </>
+        ) : (
+          // Authenticated Screens with Bottom Tabs
+          <Stack.Screen
+            name="Home"
+            component={BottomTabs}
+            options={{
+              headerShown: false,
+            }}
+          />
         )}
       </Stack.Navigator>
     </NavigationContainer>

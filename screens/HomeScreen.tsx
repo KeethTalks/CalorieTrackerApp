@@ -1,40 +1,124 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
+import { db } from '../firebase-config';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { format } from 'date-fns';
 
-export default function HomeScreen() {
-  const { user, logout } = useAuth();
+type DailyStats = {
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  goalCalories: number;
+};
 
-  const handleLogout = async () => {
+export default function HomeScreen({ navigation }: { navigation: any }) {
+  const { user, signOut } = useAuth();
+  const { colors, isDark, toggleTheme } = useTheme();
+  const [stats, setStats] = useState<DailyStats>({
+    totalCalories: 0,
+    totalProtein: 0,
+    totalCarbs: 0,
+    totalFat: 0,
+    goalCalories: 2000, // Default goal, can be made dynamic
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDailyStats();
+  }, []);
+
+  const fetchDailyStats = async () => {
     try {
-      await logout();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const mealsRef = collection(db, 'meals');
+      const q = query(
+        mealsRef,
+        where('timestamp', '>=', today)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const meals = querySnapshot.docs.map(doc => doc.data());
+      
+      const dailyStats = meals.reduce((acc, meal) => ({
+        totalCalories: acc.totalCalories + meal.calories,
+        totalProtein: acc.totalProtein + meal.protein,
+        totalCarbs: acc.totalCarbs + meal.carbs,
+        totalFat: acc.totalFat + meal.fat,
+        goalCalories: acc.goalCalories,
+      }), { ...stats });
+      
+      setStats(dailyStats);
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('Error fetching daily stats:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const getProgressPercentage = () => {
+    return Math.min((stats.totalCalories / stats.goalCalories) * 100, 100);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.headerText} accessibilityRole="header">
+        <Text style={[styles.headerText, { color: colors.text }]} accessibilityRole="header">
           Welcome Back!
         </Text>
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-          accessibilityRole="button"
-          accessibilityLabel="Sign Out Button"
-          accessibilityHint="Signs out of your account and returns to the login page"
-        >
-          <Text style={styles.logoutButtonText}>Sign Out</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={[styles.themeButton, { backgroundColor: colors.card }]}
+            onPress={toggleTheme}
+            accessibilityRole="button"
+            accessibilityLabel="Toggle theme"
+            accessibilityHint="Switches between light and dark mode"
+          >
+            <Ionicons 
+              name={isDark ? 'sunny' : 'moon'} 
+              size={24} 
+              color={colors.text} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.logoutButton, { backgroundColor: colors.error }]}
+            onPress={handleLogout}
+            accessibilityRole="button"
+            accessibilityLabel="Sign Out Button"
+            accessibilityHint="Signs out of your account and returns to the login page"
+          >
+            <Text style={styles.logoutButtonText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content}>
@@ -61,12 +145,90 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          accessibilityRole="button"
-          accessibilityLabel="Add Meal Button"
-          accessibilityHint="Add a new meal to your daily calorie count"
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border }
+          ]}
         >
+          <Text style={[styles.cardTitle, { color: colors.text }]}>
+            Calories
+          </Text>
+          <Text style={[styles.calories, { color: colors.text }]}>
+            {stats.totalCalories} / {stats.goalCalories} kcal
+          </Text>
+          <View
+            style={[
+              styles.progressBar,
+              { backgroundColor: colors.border }
+            ]}
+          >
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${getProgressPercentage()}%`,
+                  backgroundColor: colors.primary,
+                }
+              ]}
+            />
+          </View>
+        </View>
+
+        <View style={styles.macrosContainer}>
+          <View
+            style={[
+              styles.macroCard,
+              { backgroundColor: colors.card, borderColor: colors.border }
+            ]}
+          >
+            <Text style={[styles.macroTitle, { color: colors.text }]}>
+              Protein
+            </Text>
+            <Text style={[styles.macroValue, { color: colors.text }]}>
+              {stats.totalProtein}g
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.macroCard,
+              { backgroundColor: colors.card, borderColor: colors.border }
+            ]}
+          >
+            <Text style={[styles.macroTitle, { color: colors.text }]}>
+              Carbs
+            </Text>
+            <Text style={[styles.macroValue, { color: colors.text }]}>
+              {stats.totalCarbs}g
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.macroCard,
+              { backgroundColor: colors.card, borderColor: colors.border }
+            ]}
+          >
+            <Text style={[styles.macroTitle, { color: colors.text }]}>
+              Fat
+            </Text>
+            <Text style={[styles.macroValue, { color: colors.text }]}>
+              {stats.totalFat}g
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.addButton,
+            { backgroundColor: colors.primary }
+          ]}
+          onPress={() => navigation.navigate('AddMeal')}
+          accessibilityLabel="Add new meal"
+          accessibilityHint="Double tap to add a new meal"
+        >
+          <Ionicons name="add" size={24} color="#FFFFFF" />
           <Text style={styles.addButtonText}>Add Meal</Text>
         </TouchableOpacity>
 
@@ -95,6 +257,17 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#FF5733',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  themeButton: {
+    padding: 10,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   logoutButton: {
     padding: 12,
@@ -166,22 +339,65 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 5,
   },
-  addButton: {
-    backgroundColor: '#FF5733',
-    margin: 20,
-    padding: 15,
-    borderRadius: 10,
+  card: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    borderWidth: 1,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  calories: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  macrosContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  macroCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    marginHorizontal: 4,
+    borderWidth: 1,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+  },
+  macroTitle: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  macroValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
   },
   addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   motivation: {
     marginTop: 20,

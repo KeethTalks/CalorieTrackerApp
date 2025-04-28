@@ -2539,6 +2539,13 @@
   dependencies:
     "@babel/types" "^7.20.7"
 
+"@types/date-fns@^2.6.3":
+  "integrity" "sha512-Ke1lw2Ni1t/wMUoLtKFmSNCLozcTBd6vmMqFP4hRzXn6qzkNt97bPAX0x5Y/c15DP43kKvwW1ycStD5+43jVQA=="
+  "resolved" "https://registry.npmjs.org/@types/date-fns/-/date-fns-2.6.3.tgz"
+  "version" "2.6.3"
+  dependencies:
+    "date-fns" "*"
+
 "@types/eslint-scope@^3.7.7":
   "integrity" "sha512-MzMFlSLBqNF2gcHWO0G1vP/YQyfvrxZ0bF+u7mzUdZ1/xK4A4sru+nraZz5i3iEIk1l1uyicaDVTB4QbbEkAYg=="
   "resolved" "https://registry.npmjs.org/@types/eslint-scope/-/eslint-scope-3.7.7.tgz"
@@ -3750,6 +3757,11 @@
     "abab" "^2.0.6"
     "whatwg-mimetype" "^3.0.0"
     "whatwg-url" "^11.0.0"
+
+"date-fns@*", "date-fns@^4.1.0":
+  "integrity" "sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg=="
+  "resolved" "https://registry.npmjs.org/date-fns/-/date-fns-4.1.0.tgz"
+  "version" "4.1.0"
 
 "debug@^2.2.0":
   "integrity" "sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA=="

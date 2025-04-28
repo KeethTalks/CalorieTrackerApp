@@ -6,18 +6,21 @@ import {
   onAuthStateChanged,
   User,
   AuthError,
+  updateProfile,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth } from '../firebase-config';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase-config';
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,15 +80,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, displayName: string) => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Create user document in Firestore
+      await updateProfile(userCredential.user, { displayName });
       await setDoc(doc(db, 'users', userCredential.user.uid), {
-        email: userCredential.user.email,
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString(),
+        displayName,
+        email,
+        createdAt: serverTimestamp(),
       });
       setError(null);
     } catch (error) {
@@ -98,14 +101,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = async () => {
+  const signOut = async () => {
     setLoading(true);
     try {
-      await signOut(auth);
-      setUser(null);
+      await auth.signOut();
       setError(null);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Sign out error:', error);
+      const authError = error as AuthError;
+      setError(authError.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setError(null);
+    } catch (error) {
+      console.error('Reset password error:', error);
       const authError = error as AuthError;
       setError(authError.message);
       throw error;
@@ -120,7 +137,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error,
     signIn,
     signUp,
-    logout,
+    signOut,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

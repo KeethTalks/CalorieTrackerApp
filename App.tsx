@@ -7,6 +7,7 @@ import Constants from 'expo-constants';
 // Import Firebase config and context
 import './firebase-config';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { FirebaseTest } from './components/FirebaseTest';
 
 // Import navigation and screens
@@ -81,20 +82,21 @@ export default function App() {
   }
 
   return (
-    
-<AuthProvider>
-  <SafeAreaProvider>
-    <ErrorBoundary
-      FallbackComponent={ErrorFallback}
-      onReset={() => {
-        setError(null);
-        setIsReady(false);
-      }}
-    >
-      <AppNavigator />
-    </ErrorBoundary>
-  </SafeAreaProvider>
-</AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <SafeAreaProvider>
+          <ErrorBoundary
+            FallbackComponent={ErrorFallback}
+            onReset={() => {
+              setError(null);
+              setIsReady(false);
+            }}
+          >
+            <AppNavigator />
+          </ErrorBoundary>
+        </SafeAreaProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

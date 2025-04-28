@@ -79,6 +79,11 @@ if (Platform.OS === 'web') {
       debugLog('Error enabling persistence:', err);
     }
   });
+
+  // Ensure auth state is properly initialized in web environment
+  auth.onAuthStateChanged((user) => {
+    debugLog('Auth state changed:', user ? 'User signed in' : 'No user');
+  });
 }
 
 export { firebaseApp, auth, db }; 
