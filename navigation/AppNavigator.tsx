@@ -8,11 +8,19 @@ import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import { BottomTabs } from './BottomTabs';
 import LoadingScreen from '../screens/LoadingScreen';
+import BarcodeScannerScreen from '../screens/BarcodeScannerScreen';
+import AIScanScreen from '../screens/AIScanScreen';
+import VoiceLogScreen from '../screens/VoiceLogScreen';
+import AddMealScreen from '../screens/AddMealScreen';
 
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
-  Home: undefined;
+  Tabs: undefined;
+  AddMeal: undefined;
+  BarcodeScanner: undefined;
+  AIScan: undefined;
+  VoiceLog: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -40,6 +48,7 @@ export default function AppNavigator() {
   return (
     <NavigationContainer theme={theme}>
       <Stack.Navigator
+        initialRouteName={user ? 'Tabs' : 'Login'}
         screenOptions={{
           headerStyle: {
             backgroundColor: colors.card,
@@ -73,14 +82,48 @@ export default function AppNavigator() {
             />
           </>
         ) : (
-          // Authenticated Screens with Bottom Tabs
-          <Stack.Screen
-            name="Home"
-            component={BottomTabs}
-            options={{
-              headerShown: false,
-            }}
-          />
+          // Authenticated Screens
+          <>
+            <Stack.Screen
+              name="Tabs"
+              component={BottomTabs}
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="AddMeal"
+              component={AddMealScreen}
+              options={{
+                title: 'Add Meal',
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen
+              name="BarcodeScanner"
+              component={BarcodeScannerScreen}
+              options={{
+                title: 'Scan Barcode',
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen
+              name="AIScan"
+              component={AIScanScreen}
+              options={{
+                title: 'Scan with AI',
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen
+              name="VoiceLog"
+              component={VoiceLogScreen}
+              options={{
+                title: 'Voice Log',
+                presentation: 'modal',
+              }}
+            />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

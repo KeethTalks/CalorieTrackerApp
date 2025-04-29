@@ -8,6 +8,9 @@ import HomeScreen from '../screens/HomeScreen';
 import MealsScreen from '../screens/MealsScreen';
 import AddMealScreen from '../screens/AddMealScreen';
 import PlanScreen from '../screens/PlanScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import DashboardScreen from '../screens/DashboardScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -32,6 +35,12 @@ export function BottomTabs() {
               break;
             case 'Plan':
               iconName = focused ? 'calendar' : 'calendar-outline';
+              break;
+            case 'Profile':
+              iconName = focused ? 'person' : 'person-outline';
+              break;
+            case 'Settings':
+              iconName = focused ? 'settings' : 'settings-outline';
               break;
             default:
               iconName = 'help';
@@ -94,6 +103,22 @@ export function BottomTabs() {
         options={{
           title: 'Meal Plan',
           tabBarAccessibilityLabel: 'Meal plan tab',
+        }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileScreen}
+        options={{
+          title: 'Profile',
+          tabBarAccessibilityLabel: 'Profile tab',
+        }}
+      />
+      <Tab.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{
+          title: 'Settings',
+          tabBarAccessibilityLabel: 'Settings tab',
         }}
       />
     </Tab.Navigator>

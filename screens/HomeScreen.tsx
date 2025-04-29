@@ -6,6 +6,9 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  Platform,
+  Dimensions,
+  Alert,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +17,15 @@ import { useTheme } from '../context/ThemeContext';
 import { db } from '../firebase-config';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { format } from 'date-fns';
+import * as Progress from 'react-native-progress';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
+
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+
+interface HomeScreenProps {
+  navigation: HomeScreenNavigationProp;
+}
 
 type DailyStats = {
   totalCalories: number;
@@ -23,7 +35,7 @@ type DailyStats = {
   goalCalories: number;
 };
 
-export default function HomeScreen({ navigation }: { navigation: any }) {
+export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { user, signOut } = useAuth();
   const { colors, isDark, toggleTheme } = useTheme();
   const [stats, setStats] = useState<DailyStats>({
@@ -31,7 +43,7 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
     totalProtein: 0,
     totalCarbs: 0,
     totalFat: 0,
-    goalCalories: 2000, // Default goal, can be made dynamic
+    goalCalories: 2000,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -53,13 +65,13 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
       const querySnapshot = await getDocs(q);
       const meals = querySnapshot.docs.map(doc => doc.data());
       
-      const dailyStats = meals.reduce((acc, meal) => ({
-        totalCalories: acc.totalCalories + meal.calories,
-        totalProtein: acc.totalProtein + meal.protein,
-        totalCarbs: acc.totalCarbs + meal.carbs,
-        totalFat: acc.totalFat + meal.fat,
-        goalCalories: acc.goalCalories,
-      }), { ...stats });
+      const dailyStats: DailyStats = {
+        totalCalories: meals.reduce((sum, meal) => sum + (meal.calories || 0), 0),
+        totalProtein: meals.reduce((sum, meal) => sum + (meal.protein || 0), 0),
+        totalCarbs: meals.reduce((sum, meal) => sum + (meal.carbs || 0), 0),
+        totalFat: meals.reduce((sum, meal) => sum + (meal.fat || 0), 0),
+        goalCalories: stats.goalCalories,
+      };
       
       setStats(dailyStats);
     } catch (error) {
@@ -71,6 +83,11 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
 
   const getProgressPercentage = () => {
     return Math.min((stats.totalCalories / stats.goalCalories) * 100, 100);
+  };
+
+  const getMotivationalMessage = () => {
+    const progress = stats.totalCalories / stats.goalCalories;
+    return progress > 0.5 ? "Great job, keep it up!" : "You're on your way!";
   };
 
   const handleLogout = async () => {
@@ -92,9 +109,11 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.headerText, { color: colors.text }]} accessibilityRole="header">
-          Welcome Back!
-        </Text>
+        <View style={styles.welcomeContainer}>
+          <Text style={[styles.welcomeText, { color: colors.text }]}>
+            Hello, {user?.displayName || 'User'}!
+          </Text>
+        </View>
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={[styles.themeButton, { backgroundColor: colors.card }]}
@@ -110,132 +129,216 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
             />
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.logoutButton, { backgroundColor: colors.error }]}
-            onPress={handleLogout}
+            style={[styles.avatarButton, { backgroundColor: colors.card }]}
+            onPress={() => navigation.navigate('Profile')}
             accessibilityRole="button"
-            accessibilityLabel="Sign Out Button"
-            accessibilityHint="Signs out of your account and returns to the login page"
+            accessibilityLabel="View Profile"
+            accessibilityHint="Navigates to your profile page"
           >
-            <Text style={styles.logoutButtonText}>Sign Out</Text>
+            <Ionicons name="person-circle" size={32} color={colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView style={styles.content}>
-        <View style={styles.userInfoContainer} accessibilityLabel="User Information">
-          <Text style={styles.label}>Email:</Text>
-          <Text style={styles.value}>{user?.email ?? 'Not available'}</Text>
-
-          <Text style={styles.label}>User ID:</Text>
-          <Text style={styles.value}>{user?.uid ?? 'Not available'}</Text>
-        </View>
-
-        <View style={styles.statsContainer}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>2000</Text>
-            <Text style={styles.statLabel}>Daily Goal</Text>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+      >
+        <View style={[styles.sectionContainer, { backgroundColor: colors.card }]}>
+          <View style={styles.caloriesProgressContainer}>
+            {Platform.OS === 'web' ? (
+              <View style={styles.webProgressContainer}>
+                <View style={[styles.webProgressCircle, { borderColor: colors.primary }]}>
+                  <Text style={[styles.progressText, { color: colors.text }]}>
+                    {Math.round(getProgressPercentage())}%
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <Progress.Circle
+                progress={getProgressPercentage() / 100}
+                size={200}
+                thickness={12}
+                color={colors.primary}
+                unfilledColor={colors.border}
+                borderWidth={0}
+                showsText
+                formatText={() => `${Math.round(getProgressPercentage())}%`}
+                textStyle={{
+                  fontSize: 24,
+                  fontWeight: 'bold',
+                  color: colors.text,
+                }}
+              />
+            )}
+            <View style={styles.caloriesTextContainer}>
+              <Text style={[styles.caloriesText, { color: colors.text }]}>
+                {stats.totalCalories} / {stats.goalCalories}
+              </Text>
+              <Text style={[styles.caloriesLabel, { color: colors.textSecondary }]}>
+                Calories
+              </Text>
+            </View>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>1200</Text>
-            <Text style={styles.statLabel}>Consumed</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>800</Text>
-            <Text style={styles.statLabel}>Remaining</Text>
-          </View>
-        </View>
 
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border }
-          ]}
-        >
-          <Text style={[styles.cardTitle, { color: colors.text }]}>
-            Calories
-          </Text>
-          <Text style={[styles.calories, { color: colors.text }]}>
-            {stats.totalCalories} / {stats.goalCalories} kcal
-          </Text>
-          <View
-            style={[
-              styles.progressBar,
-              { backgroundColor: colors.border }
-            ]}
-          >
+          <View style={styles.macrosContainer}>
             <View
               style={[
-                styles.progressFill,
-                {
-                  width: `${getProgressPercentage()}%`,
-                  backgroundColor: colors.primary,
-                }
+                styles.macroCard,
+                { backgroundColor: colors.card }
               ]}
-            />
+            >
+              <Ionicons name="nutrition" size={24} color={colors.primary} />
+              <Text style={[styles.macroValue, { color: colors.text }]}>
+                {stats.totalProtein}g
+              </Text>
+              <Text style={[styles.macroLabel, { color: colors.textSecondary }]}>
+                Protein
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.macroCard,
+                { backgroundColor: colors.card }
+              ]}
+            >
+              <Ionicons name="pizza" size={24} color={colors.primary} />
+              <Text style={[styles.macroValue, { color: colors.text }]}>
+                {stats.totalCarbs}g
+              </Text>
+              <Text style={[styles.macroLabel, { color: colors.textSecondary }]}>
+                Carbs
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.macroCard,
+                { backgroundColor: colors.card }
+              ]}
+            >
+              <Ionicons name="flame" size={24} color={colors.primary} />
+              <Text style={[styles.macroValue, { color: colors.text }]}>
+                {stats.totalFat}g
+              </Text>
+              <Text style={[styles.macroLabel, { color: colors.textSecondary }]}>
+                Fat
+              </Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.macrosContainer}>
-          <View
-            style={[
-              styles.macroCard,
-              { backgroundColor: colors.card, borderColor: colors.border }
-            ]}
-          >
-            <Text style={[styles.macroTitle, { color: colors.text }]}>
-              Protein
+        <View style={[styles.sectionContainer, { backgroundColor: colors.card, marginTop: 16 }]}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Weight Tracking
             </Text>
-            <Text style={[styles.macroValue, { color: colors.text }]}>
-              {stats.totalProtein}g
-            </Text>
+            <TouchableOpacity
+              onPress={() => Alert.alert('Coming Soon', 'Add Weight feature coming soon!')}
+              accessibilityRole="button"
+              accessibilityLabel="Add weight"
+              accessibilityHint="Opens a dialog to add new weight entry"
+            >
+              <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
+            </TouchableOpacity>
           </View>
 
-          <View
-            style={[
-              styles.macroCard,
-              { backgroundColor: colors.card, borderColor: colors.border }
-            ]}
-          >
-            <Text style={[styles.macroTitle, { color: colors.text }]}>
-              Carbs
-            </Text>
-            <Text style={[styles.macroValue, { color: colors.text }]}>
-              {stats.totalCarbs}g
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.macroCard,
-              { backgroundColor: colors.card, borderColor: colors.border }
-            ]}
-          >
-            <Text style={[styles.macroTitle, { color: colors.text }]}>
-              Fat
-            </Text>
-            <Text style={[styles.macroValue, { color: colors.text }]}>
-              {stats.totalFat}g
+          <View style={styles.weightPlaceholder}>
+            <Text style={[styles.placeholderText, { color: colors.textSecondary }]}>
+              Weight tracking graph coming soon!
             </Text>
           </View>
         </View>
 
-        <TouchableOpacity
-          style={[
-            styles.addButton,
-            { backgroundColor: colors.primary }
-          ]}
-          onPress={() => navigation.navigate('AddMeal')}
-          accessibilityLabel="Add new meal"
-          accessibilityHint="Double tap to add a new meal"
-        >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-          <Text style={styles.addButtonText}>Add Meal</Text>
-        </TouchableOpacity>
+        <View style={styles.discoverContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 12 }]}>
+            Discover
+          </Text>
+          <View style={styles.discoverBoxesContainer}>
+            <TouchableOpacity
+              style={[styles.discoverBox, { backgroundColor: colors.card }]}
+              onPress={() => console.log('Navigating to Sleep')}
+              accessibilityRole="button"
+              accessibilityLabel="Sleep tracking"
+              accessibilityHint="Opens sleep tracking feature"
+            >
+              <Text style={[styles.discoverBoxText, { color: colors.text }]}>
+                Sleep
+              </Text>
+            </TouchableOpacity>
 
-        <Text style={styles.motivation} accessibilityLabel="Motivational Message">
-          Remember, every calorie counts toward your goals!
+            <TouchableOpacity
+              style={[styles.discoverBox, { backgroundColor: colors.card }]}
+              onPress={() => console.log('Navigating to Workouts')}
+              accessibilityRole="button"
+              accessibilityLabel="Workout tracking"
+              accessibilityHint="Opens workout tracking feature"
+            >
+              <Text style={[styles.discoverBoxText, { color: colors.text }]}>
+                Workouts
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Text style={[styles.motivation, { color: colors.textSecondary }]}>
+          {getMotivationalMessage()}
         </Text>
+
+        <View style={styles.quickLogContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Quick Log Options
+          </Text>
+          
+          <TouchableOpacity
+            style={[styles.quickLogButton, { backgroundColor: colors.primary }]}
+            onPress={() => navigation.navigate('BarcodeScanner')}
+            accessibilityRole="button"
+            accessibilityLabel="Scan barcode"
+            accessibilityHint="Opens the barcode scanner to add food items"
+          >
+            <Ionicons name="barcode-outline" size={24} color="#FFFFFF" />
+            <Text style={styles.quickLogButtonText}>Scan Barcode</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.quickLogButton, { backgroundColor: colors.primary }]}
+            onPress={() => navigation.navigate('AIScan')}
+            accessibilityRole="button"
+            accessibilityLabel="Scan with AI"
+            accessibilityHint="Opens the AI scanner to analyze your meal"
+          >
+            <Ionicons name="camera-outline" size={24} color="#FFFFFF" />
+            <Text style={styles.quickLogButtonText}>Scan with AI</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.quickLogButton, { backgroundColor: colors.primary }]}
+            onPress={() => navigation.navigate('VoiceLog')}
+            accessibilityRole="button"
+            accessibilityLabel="Log with voice"
+            accessibilityHint="Opens voice logging to add meals by speaking"
+          >
+            <Ionicons name="mic-outline" size={24} color="#FFFFFF" />
+            <Text style={styles.quickLogButtonText}>Log with Voice</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
+
+      <TouchableOpacity
+        style={[
+          styles.fab,
+          { backgroundColor: colors.primary }
+        ]}
+        onPress={() => navigation.navigate('AddMeal')}
+        accessibilityRole="button"
+        accessibilityLabel="Add new meal"
+        accessibilityHint="Double tap to add a new meal"
+      >
+        <Ionicons name="add" size={24} color="#FFFFFF" />
+        <Text style={styles.fabText}>Add Meal</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -243,126 +346,124 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF7F2',
   },
   header: {
-    padding: 20,
+    padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFC300',
   },
-  headerText: {
+  welcomeContainer: {
+    flex: 1,
+  },
+  welcomeText: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#FF5733',
   },
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   themeButton: {
-    padding: 10,
-    borderRadius: 10,
+    padding: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  logoutButton: {
-    padding: 12,
-    backgroundColor: '#FF5733',
-    borderRadius: 10,
-    minWidth: 100,
+  avatarButton: {
+    padding: 8,
+    borderRadius: 20,
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  logoutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: 16,
   },
-  userInfoContainer: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 30,
-    borderWidth: 1,
-    borderColor: '#FFC300',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+  contentContainer: {
+    paddingBottom: 100,
   },
-  label: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 5,
-    fontWeight: 'bold',
-  },
-  value: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 15,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 30,
-  },
-  statBox: {
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 15,
-    borderRadius: 10,
-    minWidth: 100,
-    borderWidth: 1,
-    borderColor: '#FFC300',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FF5733',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 5,
-  },
-  card: {
+  sectionContainer: {
     padding: 16,
     borderRadius: 12,
-    marginBottom: 24,
-    borderWidth: 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  calories: {
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  caloriesProgressContainer: {
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  webProgressContainer: {
+    width: 200,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  webProgressCircle: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    borderWidth: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressText: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 12,
   },
-  progressBar: {
-    height: 8,
-    borderRadius: 4,
-    overflow: 'hidden',
+  caloriesTextContainer: {
+    marginTop: 16,
+    alignItems: 'center',
   },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
+  caloriesText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  caloriesLabel: {
+    fontSize: 14,
+    marginTop: 4,
   },
   macrosContainer: {
     flexDirection: 'row',
@@ -373,37 +474,116 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     borderRadius: 12,
-    marginHorizontal: 4,
-    borderWidth: 1,
+    marginHorizontal: 8,
     alignItems: 'center',
-  },
-  macroTitle: {
-    fontSize: 14,
-    marginBottom: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   macroValue: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginTop: 8,
   },
-  addButton: {
+  macroLabel: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  motivation: {
+    textAlign: 'center',
+    fontSize: 16,
+    marginBottom: 24,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    left: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
     borderRadius: 12,
-    marginTop: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  addButtonText: {
+  fabText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 8,
   },
-  motivation: {
-    marginTop: 20,
+  discoverContainer: {
+    padding: 16,
+    marginTop: 16,
+  },
+  discoverBoxesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  discoverBox: {
+    width: '48%',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  discoverBoxText: {
     fontSize: 16,
-    color: '#333',
+    fontWeight: '600',
+  },
+  weightPlaceholder: {
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 20,
+  },
+  quickLogContainer: {
+    padding: 16,
+    marginTop: 16,
+  },
+  quickLogButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  quickLogButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 }); 
