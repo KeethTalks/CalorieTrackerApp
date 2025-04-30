@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 
 // Import screens
 import HomeScreen from '../screens/HomeScreen';
@@ -10,7 +11,6 @@ import MealsScreen from '../screens/MealsScreen';
 import PlanScreen from '../screens/PlanScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import AddMealScreen from '../screens/AddMealScreen';
 
 export type BottomTabParamList = {
   Home: undefined;
@@ -76,13 +76,21 @@ export default function BottomTabs() {
       />
       <Tab.Screen
         name="AddMeal"
-        component={AddMealScreen}
+        component={() => null}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle" size={size} color={color} />
           ),
           tabBarLabel: 'Add Meal',
           tabBarAccessibilityLabel: 'Add Meal Screen',
+          tabBarButton: (props) => (
+            <TouchableOpacity
+              {...props}
+              onPress={() => props.navigation.navigate('AddMeal')}
+              accessibilityLabel="Add Meal Tab"
+              accessibilityHint="Navigates to the Add Meal screen"
+            />
+          ),
         }}
       />
       <Tab.Screen

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component, PropsWithChildren } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase-config.js';
 import { collection, query, where, getDocs, deleteDoc, doc, orderBy } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -35,6 +36,32 @@ type Meal = {
   timestamp: Date;
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
 };
+
+// Error Boundary Component
+class ErrorBoundary extends Component<PropsWithChildren<{}>, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("MealsScreen Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ fontSize: 16, color: '#000' }}>
+            Something went wrong on Meals Screen. Please try again.
+          </Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const MealsScreen: React.FC<MealsScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
@@ -151,31 +178,36 @@ const MealsScreen: React.FC<MealsScreenProps> = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>My Meals</Text>
-        <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: colors.primary }]}
-          onPress={() => navigation.navigate('AddMeal')}
-          accessibilityRole="button"
-          accessibilityLabel="Add new meal"
-          accessibilityHint="Opens the add meal screen"
-        >
-          <Ionicons name="add" size={24} color={colors.background} />
-        </TouchableOpacity>
-      </View>
-      <FlatList
-        data={meals}
-        renderItem={renderMealItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <Text style={[styles.emptyText, { color: colors.text }]}>
-            No meals logged today
-          </Text>
-        }
-      />
-    </SafeAreaView>
+    <ErrorBoundary>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.text }]}>My Meals</Text>
+          <TouchableOpacity
+            style={[styles.addButton, { backgroundColor: colors.primary }]}
+            onPress={() => {
+              console.log("Navigating to AddMeal from MealsScreen"); // Debug log
+              navigation.navigate('AddMeal');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Add new meal"
+            accessibilityHint="Opens the add meal screen"
+          >
+            <Ionicons name="add" size={24} color={colors.background} />
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={meals}
+          renderItem={renderMealItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <Text style={[styles.emptyText, { color: colors.text }]}>
+              No meals logged today
+            </Text>
+          }
+        />
+      </SafeAreaView>
+    </ErrorBoundary>
   );
 };
 

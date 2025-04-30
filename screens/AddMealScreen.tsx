@@ -20,6 +20,8 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase-config';
 import { Camera } from 'expo-camera';
 import * as Speech from 'expo-speech';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 const MEAL_TYPES = [
   { id: 'breakfast', name: 'Breakfast' },
@@ -29,10 +31,13 @@ const MEAL_TYPES = [
   { id: 'water', name: 'Water' },
 ];
 
+// Update navigation prop typing
+type AddMealScreenProps = NativeStackScreenProps<RootStackParamList, 'AddMeal'>;
+
 export default function AddMealScreen({ navigation }: { navigation: any }) {
   const { user } = useAuth();
   const { colors } = useTheme();
-  const [mealType, setMealType] = useState('');
+  const [mealType, setMealType] = useState(route.params?.mealType || '');  
   const [mealName, setMealName] = useState('');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
@@ -177,7 +182,7 @@ export default function AddMealScreen({ navigation }: { navigation: any }) {
           <View style={styles.aiButtonsContainer}>
             <TouchableOpacity
               style={[styles.aiButton, { backgroundColor: colors.primary }]}
-              onPress={() => setIsCameraVisible(true)}
+              onPress={() => navigation.navigate('BarcodeScanner')} // Navigate to BarcodeScanner
               accessibilityRole="button"
               accessibilityLabel="Scan Meal"
               accessibilityHint="Opens camera to scan your meal"
