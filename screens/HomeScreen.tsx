@@ -890,6 +890,7 @@ const styles = StyleSheet.create({
   motivation: {
     textAlign: 'center',
     fontSize: 16,
+    marginTop: 16, 
     marginBottom: 24,
   },
   quickLogContainer: {
@@ -902,6 +903,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 12,
     borderRadius: 12,
+    marginTop: 16,
     marginBottom: 8,
   },
   quickLogButtonText: {
