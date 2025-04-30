@@ -6,12 +6,24 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import { db } from '../firebase-config';
-import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../firebase-config.js';
+import { collection, query, where, getDocs, deleteDoc, doc, orderBy } from 'firebase/firestore';
 import { format } from 'date-fns';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { BottomTabParamList } from '../navigation/BottomTabs';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
+
+type MealsScreenNavigationProp = BottomTabNavigationProp<BottomTabParamList, 'Meals'>;
+
+interface MealsScreenProps {
+  navigation: MealsScreenNavigationProp;
+}
 
 type Meal = {
   id: string;
@@ -24,7 +36,7 @@ type Meal = {
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
 };
 
-export default function MealsScreen() {
+const MealsScreen: React.FC<MealsScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,7 +53,8 @@ export default function MealsScreen() {
       const mealsRef = collection(db, 'meals');
       const q = query(
         mealsRef,
-        where('timestamp', '>=', today)
+        where('timestamp', '>=', today),
+        orderBy('timestamp', 'desc')
       );
       
       const querySnapshot = await getDocs(q);
@@ -51,7 +64,7 @@ export default function MealsScreen() {
         timestamp: doc.data().timestamp.toDate(),
       })) as Meal[];
       
-      setMeals(mealsData.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
+      setMeals(mealsData);
     } catch (error) {
       console.error('Error fetching meals:', error);
       Alert.alert('Error', 'Failed to load meals. Please try again.');
@@ -131,16 +144,26 @@ export default function MealsScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={[styles.loadingText, { color: colors.text }]}>
-          Loading meals...
-        </Text>
-      </View>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: colors.text }]}>My Meals</Text>
+        <TouchableOpacity
+          style={[styles.addButton, { backgroundColor: colors.primary }]}
+          onPress={() => navigation.navigate('AddMeal')}
+          accessibilityRole="button"
+          accessibilityLabel="Add new meal"
+          accessibilityHint="Opens the add meal screen"
+        >
+          <Ionicons name="add" size={24} color={colors.background} />
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={meals}
         renderItem={renderMealItem}
@@ -152,9 +175,9 @@ export default function MealsScreen() {
           </Text>
         }
       />
-    </View>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -216,4 +239,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
   },
-}); 
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  addButton: {
+    padding: 8,
+    borderRadius: 8,
+  },
+});
+
+export default MealsScreen; 

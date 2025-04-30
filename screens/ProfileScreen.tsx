@@ -1,158 +1,288 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { db } from '../firebase-config.js';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-export default function ProfileScreen() {
-  const { colors } = useTheme();
+type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
+
+interface Props {
+  navigation: ProfileScreenNavigationProp;
+}
+
+const DIET_TYPES = [
+  { label: 'None', value: 'none' },
+  { label: 'Vegetarian', value: 'vegetarian' },
+  { label: 'Vegan', value: 'vegan' },
+  { label: 'Keto', value: 'keto' },
+  { label: 'Gluten-Free', value: 'gluten-free' },
+];
+
+const CUISINE_PREFERENCES = [
+  { label: 'Any', value: 'any' },
+  { label: 'Italian', value: 'italian' },
+  { label: 'Asian', value: 'asian' },
+  { label: 'Mexican', value: 'mexican' },
+];
+
+const ProfileScreen: React.FC<Props> = ({ navigation }) => {
+  const { colors, isDark, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [dietType, setDietType] = useState('none');
+  const [cuisinePreference, setCuisinePreference] = useState('any');
 
-  const handleSignOut = async () => {
+  useEffect(() => {
+    fetchUserSettings();
+  }, []);
+
+  const fetchUserSettings = async () => {
+    if (!user) return;
+    
     try {
-      await signOut();
+      const userSettingsRef = doc(db, 'userSettings', user.uid);
+      const docSnap = await getDoc(userSettingsRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setDietType(data.dietType || 'none');
+        setCuisinePreference(data.cuisinePreference || 'any');
+      }
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Error fetching user settings:', error);
+      Alert.alert('Error', 'Failed to load user settings');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleSavePreferences = async () => {
+    if (!user) return;
+    
+    setIsSaving(true);
+    try {
+      const userSettingsRef = doc(db, 'userSettings', user.uid);
+      await setDoc(userSettingsRef, {
+        dietType,
+        cuisinePreference,
+      }, { merge: true });
+      
+      Alert.alert('Success', 'Preferences saved successfully');
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      Alert.alert('Error', 'Failed to save preferences');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <View style={[styles.avatarContainer, { backgroundColor: colors.primary }]}>
-            <Text style={styles.avatarText}>
-              {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
-            </Text>
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: colors.text }]}>Profile</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('EditProfile')}
+          accessibilityRole="button"
+          accessibilityLabel="Edit Profile"
+          accessibilityHint="Opens the edit profile screen"
+        >
+          <Ionicons name="create-outline" size={24} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Dietary Preferences</Text>
+        
+        <View style={styles.preferenceGroup}>
+          <Text style={[styles.label, { color: colors.text }]}>Diet Type</Text>
+          <View style={styles.optionsContainer}>
+            {DIET_TYPES.map((type) => (
+              <TouchableOpacity
+                key={type.value}
+                style={[
+                  styles.option,
+                  { 
+                    backgroundColor: dietType === type.value ? colors.primary : colors.card,
+                    borderColor: colors.border
+                  }
+                ]}
+                onPress={() => setDietType(type.value)}
+                accessibilityRole="button"
+                accessibilityLabel={`Select ${type.label} diet type`}
+                accessibilityState={{ selected: dietType === type.value }}
+              >
+                <Text style={[
+                  styles.optionText,
+                  { color: dietType === type.value ? '#fff' : colors.text }
+                ]}>
+                  {type.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
-          <Text style={[styles.name, { color: colors.text }]}>
-            {user?.displayName || 'User'}
-          </Text>
-          <Text style={[styles.email, { color: colors.textSecondary }]}>
-            {user?.email}
-          </Text>
         </View>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Account Settings</Text>
-          <TouchableOpacity style={[styles.settingItem, { backgroundColor: colors.card }]}>
-            <Ionicons name="person-outline" size={24} color={colors.primary} />
-            <Text style={[styles.settingText, { color: colors.text }]}>Edit Profile</Text>
-            <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.settingItem, { backgroundColor: colors.card }]}>
-            <Ionicons name="notifications-outline" size={24} color={colors.primary} />
-            <Text style={[styles.settingText, { color: colors.text }]}>Notifications</Text>
-            <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.settingItem, { backgroundColor: colors.card }]}>
-            <Ionicons name="lock-closed-outline" size={24} color={colors.primary} />
-            <Text style={[styles.settingText, { color: colors.text }]}>Privacy</Text>
-            <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Preferences</Text>
-          <TouchableOpacity style={[styles.settingItem, { backgroundColor: colors.card }]}>
-            <Ionicons name="moon-outline" size={24} color={colors.primary} />
-            <Text style={[styles.settingText, { color: colors.text }]}>Dark Mode</Text>
-            <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.settingItem, { backgroundColor: colors.card }]}>
-            <Ionicons name="language-outline" size={24} color={colors.primary} />
-            <Text style={[styles.settingText, { color: colors.text }]}>Language</Text>
-            <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Support</Text>
-          <TouchableOpacity style={[styles.settingItem, { backgroundColor: colors.card }]}>
-            <Ionicons name="help-circle-outline" size={24} color={colors.primary} />
-            <Text style={[styles.settingText, { color: colors.text }]}>Help & Support</Text>
-            <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.settingItem, { backgroundColor: colors.card }]}>
-            <Ionicons name="information-circle-outline" size={24} color={colors.primary} />
-            <Text style={[styles.settingText, { color: colors.text }]}>About</Text>
-            <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
+        <View style={styles.preferenceGroup}>
+          <Text style={[styles.label, { color: colors.text }]}>Cuisine Preference</Text>
+          <View style={styles.optionsContainer}>
+            {CUISINE_PREFERENCES.map((cuisine) => (
+              <TouchableOpacity
+                key={cuisine.value}
+                style={[
+                  styles.option,
+                  { 
+                    backgroundColor: cuisinePreference === cuisine.value ? colors.primary : colors.card,
+                    borderColor: colors.border
+                  }
+                ]}
+                onPress={() => setCuisinePreference(cuisine.value)}
+                accessibilityRole="button"
+                accessibilityLabel={`Select ${cuisine.label} cuisine`}
+                accessibilityState={{ selected: cuisinePreference === cuisine.value }}
+              >
+                <Text style={[
+                  styles.optionText,
+                  { color: cuisinePreference === cuisine.value ? '#fff' : colors.text }
+                ]}>
+                  {cuisine.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         <TouchableOpacity
-          style={[styles.signOutButton, { backgroundColor: colors.error }]}
-          onPress={handleSignOut}
+          style={[styles.saveButton, { backgroundColor: colors.primary }]}
+          onPress={handleSavePreferences}
+          disabled={isSaving}
+          accessibilityRole="button"
+          accessibilityLabel="Save Preferences"
+          accessibilityHint="Saves your dietary preferences"
         >
-          <Text style={styles.signOutText}>Sign Out</Text>
+          {isSaving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Preferences</Text>
+          )}
         </TouchableOpacity>
-      </ScrollView>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>App Settings</Text>
+        <TouchableOpacity
+          style={[styles.settingItem, { borderBottomColor: colors.border }]}
+          onPress={() => navigation.navigate('Language')}
+          accessibilityRole="button"
+          accessibilityLabel="Language Settings"
+          accessibilityHint="Opens language settings"
+        >
+          <Text style={[styles.settingText, { color: colors.text }]}>Language</Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity
+        style={[styles.logoutButton, { backgroundColor: colors.error }]}
+        onPress={signOut}
+        accessibilityRole="button"
+        accessibilityLabel="Sign Out"
+        accessibilityHint="Signs out of your account"
+      >
+        <Text style={styles.logoutButtonText}>Sign Out</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollContent: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 16,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarText: {
-    fontSize: 32,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  name: {
+  title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  email: {
-    fontSize: 16,
   },
   section: {
-    marginBottom: 24,
+    padding: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
   },
+  preferenceGroup: {
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  option: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  optionText: {
+    fontSize: 14,
+  },
+  saveButton: {
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   settingItem: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
   },
   settingText: {
-    flex: 1,
     fontSize: 16,
-    marginLeft: 16,
   },
-  signOutButton: {
+  logoutButton: {
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 24,
+    margin: 16,
   },
-  signOutText: {
-    color: '#FFFFFF',
+  logoutButtonText: {
+    color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
-}); 
+});
+
+export default ProfileScreen; 

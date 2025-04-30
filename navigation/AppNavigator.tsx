@@ -1,17 +1,20 @@
 import React from 'react';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useTheme } from '../context/ThemeContext';
-
 import { useAuth } from '../context/AuthContext';
+import LoadingScreen from '../screens/LoadingScreen';
+import BottomTabs from './BottomTabs';
+
+// Import screens
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
-import { BottomTabs } from './BottomTabs';
-import LoadingScreen from '../screens/LoadingScreen';
+import AddMealScreen from '../screens/AddMealScreen';
 import BarcodeScannerScreen from '../screens/BarcodeScannerScreen';
 import AIScanScreen from '../screens/AIScanScreen';
 import VoiceLogScreen from '../screens/VoiceLogScreen';
-import AddMealScreen from '../screens/AddMealScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import LanguageScreen from '../screens/LanguageScreen';
+import { BottomTabParamList } from './BottomTabs';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -21,46 +24,27 @@ export type RootStackParamList = {
   BarcodeScanner: undefined;
   AIScan: undefined;
   VoiceLog: undefined;
-};
+  EditProfile: undefined;
+  Language: undefined;
+  MealPlan: undefined;
+} & BottomTabParamList;
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const { user, loading } = useAuth();
-  const { isDark, colors } = useTheme();
-
-  const theme = {
-    ...(isDark ? DarkTheme : DefaultTheme),
-    colors: {
-      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
-      primary: colors.primary,
-      background: colors.background,
-      card: colors.card,
-      text: colors.text,
-      border: colors.border,
-    },
-  };
 
   if (loading) {
     return <LoadingScreen />;
   }
 
   return (
-    <NavigationContainer theme={theme}>
+    <NavigationContainer>
       <Stack.Navigator
         initialRouteName={user ? 'Tabs' : 'Login'}
         screenOptions={{
-          headerStyle: {
-            backgroundColor: colors.card,
-          },
-          headerTintColor: colors.text,
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-          headerShadowVisible: false,
-          contentStyle: {
-            backgroundColor: colors.background,
-          },
+          headerShown: false,
+          animation: 'fade',
         }}
       >
         {!user ? (
@@ -71,6 +55,7 @@ export default function AppNavigator() {
               component={LoginScreen}
               options={{
                 headerShown: false,
+                animation: 'fade',
               }}
             />
             <Stack.Screen
@@ -78,6 +63,7 @@ export default function AppNavigator() {
               component={SignupScreen}
               options={{
                 headerShown: false,
+                animation: 'fade',
               }}
             />
           </>
@@ -89,6 +75,7 @@ export default function AppNavigator() {
               component={BottomTabs}
               options={{
                 headerShown: false,
+                animation: 'fade',
               }}
             />
             <Stack.Screen
@@ -97,6 +84,7 @@ export default function AppNavigator() {
               options={{
                 title: 'Add Meal',
                 presentation: 'modal',
+                animation: 'slide_from_bottom',
               }}
             />
             <Stack.Screen
@@ -105,6 +93,7 @@ export default function AppNavigator() {
               options={{
                 title: 'Scan Barcode',
                 presentation: 'modal',
+                animation: 'slide_from_bottom',
               }}
             />
             <Stack.Screen
@@ -113,6 +102,7 @@ export default function AppNavigator() {
               options={{
                 title: 'Scan with AI',
                 presentation: 'modal',
+                animation: 'slide_from_bottom',
               }}
             />
             <Stack.Screen
@@ -121,6 +111,25 @@ export default function AppNavigator() {
               options={{
                 title: 'Voice Log',
                 presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <Stack.Screen
+              name="EditProfile"
+              component={EditProfileScreen}
+              options={{
+                title: 'Edit Profile',
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <Stack.Screen
+              name="Language"
+              component={LanguageScreen}
+              options={{
+                title: 'Language Settings',
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
               }}
             />
           </>

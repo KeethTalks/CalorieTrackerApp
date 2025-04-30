@@ -1,124 +1,121 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
 
 // Import screens
 import HomeScreen from '../screens/HomeScreen';
 import MealsScreen from '../screens/MealsScreen';
-import AddMealScreen from '../screens/AddMealScreen';
 import PlanScreen from '../screens/PlanScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import DashboardScreen from '../screens/DashboardScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import AddMealScreen from '../screens/AddMealScreen';
 
-const Tab = createBottomTabNavigator();
+export type BottomTabParamList = {
+  Home: undefined;
+  Meals: undefined;
+  AddMeal: undefined;
+  Plan: undefined;
+  Profile: undefined;
+  Settings: undefined;
+};
 
-export function BottomTabs() {
+const Tab = createBottomTabNavigator<BottomTabParamList>();
+
+export default function BottomTabs() {
   const { colors } = useTheme();
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
-
-          switch (route.name) {
-            case 'Home':
-              iconName = focused ? 'home' : 'home-outline';
-              break;
-            case 'Meals':
-              iconName = focused ? 'restaurant' : 'restaurant-outline';
-              break;
-            case 'AddMeal':
-              iconName = focused ? 'add-circle' : 'add-circle-outline';
-              break;
-            case 'Plan':
-              iconName = focused ? 'calendar' : 'calendar-outline';
-              break;
-            case 'Profile':
-              iconName = focused ? 'person' : 'person-outline';
-              break;
-            case 'Settings':
-              iconName = focused ? 'settings' : 'settings-outline';
-              break;
-            default:
-              iconName = 'help';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+      screenOptions={{
         tabBarStyle: {
-          backgroundColor: colors.card,
+          height: 80,
+          paddingBottom: 12,
+          paddingTop: 8,
+          backgroundColor: colors.background,
           borderTopColor: colors.border,
-          paddingBottom: 15,
-          paddingTop: 5,
-          height: 60,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          marginBottom: 5,
+          fontWeight: '500',
+          marginBottom: 8,
         },
-        headerStyle: {
-          backgroundColor: colors.card,
-        },
-        headerTintColor: colors.text,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        contentStyle: {
-          backgroundColor: colors.background,
-        },
-      })}
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.text,
+        tabBarShowLabel: true,
+        headerShown: false,
+      }}
     >
-      <Tab.Screen 
-        name="Home" 
+      <Tab.Screen
+        name="Home"
         component={HomeScreen}
         options={{
-          title: 'Dashboard',
-          tabBarAccessibilityLabel: 'Dashboard tab',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
+          tabBarLabel: 'Home',
+          tabBarAccessibilityLabel: 'Home Screen',
         }}
       />
-      <Tab.Screen 
-        name="Meals" 
+      <Tab.Screen
+        name="Meals"
         component={MealsScreen}
         options={{
-          title: 'Today\'s Meals',
-          tabBarAccessibilityLabel: 'Meals tab',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="restaurant" size={size} color={color} />
+          ),
+          tabBarLabel: 'Meals',
+          tabBarAccessibilityLabel: 'Meals Screen',
         }}
       />
-      <Tab.Screen 
-        name="AddMeal" 
+      <Tab.Screen
+        name="AddMeal"
         component={AddMealScreen}
         options={{
-          title: 'Add Meal',
-          tabBarAccessibilityLabel: 'Add meal tab',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle" size={size} color={color} />
+          ),
+          tabBarLabel: 'Add Meal',
+          tabBarAccessibilityLabel: 'Add Meal Screen',
         }}
       />
-      <Tab.Screen 
-        name="Plan" 
+      <Tab.Screen
+        name="Plan"
         component={PlanScreen}
         options={{
-          title: 'Meal Plan',
-          tabBarAccessibilityLabel: 'Meal plan tab',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar" size={size} color={color} />
+          ),
+          tabBarLabel: 'Plan',
+          tabBarAccessibilityLabel: 'Meal Plan Screen',
         }}
       />
-      <Tab.Screen 
-        name="Profile" 
+      <Tab.Screen
+        name="Profile"
         component={ProfileScreen}
         options={{
-          title: 'Profile',
-          tabBarAccessibilityLabel: 'Profile tab',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={size} color={color} />
+          ),
+          tabBarLabel: 'Profile',
+          tabBarAccessibilityLabel: 'Profile Screen',
         }}
       />
-      <Tab.Screen 
-        name="Settings" 
+      <Tab.Screen
+        name="Settings"
         component={SettingsScreen}
         options={{
-          title: 'Settings',
-          tabBarAccessibilityLabel: 'Settings tab',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings" size={size} color={color} />
+          ),
+          tabBarLabel: 'Settings',
+          tabBarAccessibilityLabel: 'Settings Screen',
         }}
       />
     </Tab.Navigator>

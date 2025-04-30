@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,24 +7,90 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTheme } from '../context/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withDelay,
+  Easing,
+} from 'react-native-reanimated';
 
-type RootStackParamList = {
-  Login: undefined;
-  Signup: undefined;
-  Home: undefined;
-};
-
-type Props = NativeStackScreenProps<RootStackParamList, 'Signup'>;
-
-export default function SignupScreen({ navigation }: Props) {
+export default function SignupScreen({ navigation }: { navigation: any }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { signUp, loading } = useAuth();
+  const { colors } = useTheme();
+
+  // Animation values
+  const logoOpacity = useSharedValue(0);
+  const logoScale = useSharedValue(0.8);
+  const emailTranslateX = useSharedValue(-100);
+  const passwordTranslateX = useSharedValue(-100);
+  const confirmPasswordTranslateX = useSharedValue(-100);
+  const buttonOpacity = useSharedValue(0);
+  const buttonScale = useSharedValue(0.9);
+
+  useEffect(() => {
+    // Start animations
+    logoOpacity.value = withTiming(1, { duration: 1000 });
+    logoScale.value = withSpring(1, { damping: 8 });
+    
+    emailTranslateX.value = withDelay(
+      200,
+      withSpring(0, { damping: 8 })
+    );
+    
+    passwordTranslateX.value = withDelay(
+      400,
+      withSpring(0, { damping: 8 })
+    );
+    
+    confirmPasswordTranslateX.value = withDelay(
+      600,
+      withSpring(0, { damping: 8 })
+    );
+    
+    buttonOpacity.value = withDelay(
+      800,
+      withTiming(1, { duration: 500 })
+    );
+    
+    buttonScale.value = withDelay(
+      800,
+      withSpring(1, { damping: 8 })
+    );
+  }, []);
+
+  const logoStyle = useAnimatedStyle(() => ({
+    opacity: logoOpacity.value,
+    transform: [{ scale: logoScale.value }],
+  }));
+
+  const emailStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: emailTranslateX.value }],
+  }));
+
+  const passwordStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: passwordTranslateX.value }],
+  }));
+
+  const confirmPasswordStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: confirmPasswordTranslateX.value }],
+  }));
+
+  const buttonStyle = useAnimatedStyle(() => ({
+    opacity: buttonOpacity.value,
+    transform: [{ scale: buttonScale.value }],
+  }));
 
   const handleSignup = async () => {
     if (email === '' || password === '' || confirmPassword === '') {
@@ -54,75 +120,88 @@ export default function SignupScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title} accessibilityRole="header">
-        Create Your Account
-      </Text>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          accessibilityLabel="Email Input Field"
-          accessibilityHint="Enter your email address"
-        />
-
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          accessibilityLabel="Password Input Field"
-          accessibilityHint="Enter a secure password with at least 6 characters"
-        />
-
-        <Text style={styles.label}>Confirm Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm your password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          accessibilityLabel="Confirm Password Input Field"
-          accessibilityHint="Re-enter your password to confirm it matches"
-        />
-      </View>
-
-      <TouchableOpacity
-        style={[styles.button, loading && styles.buttonLoading]}
-        onPress={handleSignup}
-        disabled={loading}
-        accessibilityRole="button"
-        accessibilityLabel="Signup Button"
-        accessibilityHint="Creates your account using the provided email and password"
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Sign Up</Text>
-        )}
-      </TouchableOpacity>
+        <Animated.View style={[styles.logoContainer, logoStyle]}>
+          <Text style={[styles.logo, { color: colors.primary }]}>
+            Calorie Tracker by KeethTalks
+          </Text>
+        </Animated.View>
 
-      <View style={styles.footerContainer}>
-        <Text style={styles.footerText} accessibilityLabel="Login Suggestion">
-          Already have an account?{' '}
-        </Text>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Login')}
-          accessibilityRole="link"
-          accessibilityLabel="Login Link"
-          accessibilityHint="Navigates to the login page"
-        >
-          <Text style={styles.footerLink}>Log in</Text>
-        </TouchableOpacity>
-      </View>
+        <Animated.View style={[styles.inputContainer, emailStyle]}>
+          <Ionicons name="mail-outline" size={24} color={colors.text} style={styles.inputIcon} />
+          <TextInput
+            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+            placeholder="Email"
+            placeholderTextColor={colors.textSecondary}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            accessibilityLabel="Email Input Field"
+            accessibilityHint="Enter your email address"
+          />
+        </Animated.View>
+
+        <Animated.View style={[styles.inputContainer, passwordStyle]}>
+          <Ionicons name="lock-closed-outline" size={24} color={colors.text} style={styles.inputIcon} />
+          <TextInput
+            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+            placeholder="Password"
+            placeholderTextColor={colors.textSecondary}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            accessibilityLabel="Password Input Field"
+            accessibilityHint="Enter a secure password with at least 6 characters"
+          />
+        </Animated.View>
+
+        <Animated.View style={[styles.inputContainer, confirmPasswordStyle]}>
+          <Ionicons name="lock-closed-outline" size={24} color={colors.text} style={styles.inputIcon} />
+          <TextInput
+            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+            placeholder="Confirm Password"
+            placeholderTextColor={colors.textSecondary}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            accessibilityLabel="Confirm Password Input Field"
+            accessibilityHint="Re-enter your password to confirm it matches"
+          />
+        </Animated.View>
+
+        <Animated.View style={[styles.buttonContainer, buttonStyle]}>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.primary }]}
+            onPress={handleSignup}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Signup Button"
+            accessibilityHint="Creates your account using the provided email and password"
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonText}>Sign Up</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Login')}
+            accessibilityRole="button"
+            accessibilityLabel="Login Link"
+            accessibilityHint="Navigate to the login page"
+          >
+            <Text style={[styles.loginText, { color: colors.primary }]}>
+              Already have an account? Log in
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -130,67 +209,54 @@ export default function SignupScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#FFF7F2',
   },
-  title: {
-    fontSize: 28,
+  keyboardAvoidingView: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 48,
+  },
+  logo: {
+    fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 30,
-    color: '#FF5733',
     textAlign: 'center',
   },
   inputContainer: {
-    width: '100%',
-    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: '#333',
-    fontWeight: 'bold',
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    backgroundColor: '#FFFFFF',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
+    flex: 1,
+    height: 48,
     borderWidth: 1,
-    borderColor: '#FFC300',
+    borderRadius: 12,
+    paddingHorizontal: 16,
     fontSize: 16,
+  },
+  buttonContainer: {
+    marginTop: 24,
   },
   button: {
-    backgroundColor: '#FF5733',
-    padding: 15,
-    borderRadius: 10,
-    width: '100%',
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  buttonLoading: {
-    opacity: 0.7,
+    marginBottom: 16,
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: '600',
   },
-  footerContainer: {
-    flexDirection: 'row',
-    marginTop: 20,
-    justifyContent: 'center',
-  },
-  footerText: {
-    color: '#666',
+  loginText: {
     fontSize: 16,
-  },
-  footerLink: {
-    color: '#FF5733',
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
+    textAlign: 'center',
   },
 }); 
