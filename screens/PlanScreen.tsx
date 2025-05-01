@@ -42,7 +42,10 @@ const MEAL_CONTAINERS: MealContainer[] = [
   { type: 'water', icon: 'water-outline', label: 'Water' },
 ];
 
-export default function PlanScreen({ navigation }: { navigation: any }) {
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/AppNavigator';
+
+export default function PlanScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const { colors } = useTheme();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [meals, setMeals] = useState<Meal[]>([]);
@@ -165,7 +168,9 @@ export default function PlanScreen({ navigation }: { navigation: any }) {
                   </Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('AddMeal', { mealType: container.type })}
+                  onPress={() => {
+                    navigation.getParent()?.navigate('AddMeal', { mealType: container.type });
+                  }}
                   accessibilityLabel={`Add ${container.label} meal`}
                   accessibilityHint={`Navigates to add a ${container.label} meal`}
                 >

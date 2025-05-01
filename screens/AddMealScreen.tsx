@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -31,13 +31,12 @@ const MEAL_TYPES = [
   { id: 'water', name: 'Water' },
 ];
 
-// Update navigation prop typing
 type AddMealScreenProps = NativeStackScreenProps<RootStackParamList, 'AddMeal'>;
 
-export default function AddMealScreen({ navigation }: { navigation: any }) {
+export default function AddMealScreen({ navigation, route }: AddMealScreenProps) {
   const { user } = useAuth();
   const { colors } = useTheme();
-  const [mealType, setMealType] = useState(route.params?.mealType || '');  
+  const [mealType, setMealType] = useState(route.params?.mealType || '');
   const [mealName, setMealName] = useState('');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
@@ -51,6 +50,12 @@ export default function AddMealScreen({ navigation }: { navigation: any }) {
   const [isAIResultModalVisible, setIsAIResultModalVisible] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
   const cameraRef = useRef<Camera>(null);
+
+  useEffect(() => {
+    if (route.params?.mealType) {
+      setMealType(route.params.mealType);
+    }
+  }, [route.params?.mealType]);
 
   const handleAddMeal = async () => {
     if (!mealType || !mealName || !calories) {
@@ -148,14 +153,8 @@ export default function AddMealScreen({ navigation }: { navigation: any }) {
         setMealType(item.id);
         setIsMealTypeModalVisible(false);
       }}
-      accessibilityRole="button"
-      accessibilityLabel={`Select ${item.name} meal type`}
-      accessibilityHint={`Sets the meal type to ${item.name}`}
     >
-      <Text style={[styles.mealTypeText, { color: colors.text }]}>{item.name}</Text>
-      {mealType === item.id && (
-        <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
-      )}
+      <Text style={[styles.mealTypeName, { color: colors.text }]}>{item.name}</Text>
     </TouchableOpacity>
   );
 
@@ -165,311 +164,191 @@ export default function AddMealScreen({ navigation }: { navigation: any }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}
       >
-        <View style={styles.header}>
+        <View style={styles.content}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            accessibilityHint="Returns to the previous screen"
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.text }]}>Add Meal</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.aiButtonsContainer}>
-            <TouchableOpacity
-              style={[styles.aiButton, { backgroundColor: colors.primary }]}
-              onPress={() => navigation.navigate('BarcodeScanner')} // Navigate to BarcodeScanner
-              accessibilityRole="button"
-              accessibilityLabel="Scan Meal"
-              accessibilityHint="Opens camera to scan your meal"
-            >
-              <Ionicons name="camera-outline" size={24} color="#FFFFFF" />
-              <Text style={styles.aiButtonText}>Scan Meal</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.aiButton, { backgroundColor: colors.primary }]}
-              onPress={() => setIsVoiceModalVisible(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Voice Log"
-              accessibilityHint="Record your meal details by voice"
-            >
-              <Ionicons name="mic-outline" size={24} color="#FFFFFF" />
-              <Text style={styles.aiButtonText}>Voice Log</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.mealTypeButton, { backgroundColor: colors.card }]}
+            style={[
+              styles.mealTypeButton,
+              { backgroundColor: colors.card },
+            ]}
             onPress={() => setIsMealTypeModalVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Meal Type Selector"
-            accessibilityHint="Opens the meal type selection modal"
           >
-            <Text style={[styles.mealTypeButtonText, { color: colors.text }]}>
-              {mealType ? MEAL_TYPES.find(type => type.id === mealType)?.name : 'Select Meal Type'}
+            <Text style={[styles.mealTypeText, { color: colors.text }]}>
+              {mealType ? MEAL_TYPES.find(t => t.id === mealType)?.name : 'Select Meal Type'}
             </Text>
-            <Ionicons name="chevron-down" size={24} color={colors.text} />
           </TouchableOpacity>
 
-          <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: colors.text }]}>Meal Name</Text>
-            <TextInput
-              style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-              value={mealName}
-              onChangeText={setMealName}
-              placeholder="Enter meal name"
-              placeholderTextColor={colors.textSecondary}
-              accessibilityLabel="Meal Name Input Field"
-              accessibilityHint="Enter the name of your meal"
-            />
-          </View>
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.card, color: colors.text }]}
+            placeholder="Meal Name"
+            placeholderTextColor={colors.textSecondary}
+            value={mealName}
+            onChangeText={setMealName}
+          />
 
-          <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: colors.text }]}>Calories</Text>
-            <TextInput
-              style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-              value={calories}
-              onChangeText={setCalories}
-              placeholder="Enter calories"
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="numeric"
-              accessibilityLabel="Calories Input Field"
-              accessibilityHint="Enter the number of calories"
-            />
-          </View>
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.card, color: colors.text }]}
+            placeholder="Calories"
+            placeholderTextColor={colors.textSecondary}
+            value={calories}
+            onChangeText={setCalories}
+            keyboardType="numeric"
+          />
 
-          <View style={styles.macrosContainer}>
-            <View style={styles.macroInput}>
-              <Text style={[styles.label, { color: colors.text }]}>Protein (g)</Text>
-              <TextInput
-                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                value={protein}
-                onChangeText={setProtein}
-                placeholder="0"
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="numeric"
-                accessibilityLabel="Protein Input Field"
-                accessibilityHint="Enter the amount of protein in grams"
-              />
-            </View>
-            <View style={styles.macroInput}>
-              <Text style={[styles.label, { color: colors.text }]}>Carbs (g)</Text>
-              <TextInput
-                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                value={carbs}
-                onChangeText={setCarbs}
-                placeholder="0"
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="numeric"
-                accessibilityLabel="Carbs Input Field"
-                accessibilityHint="Enter the amount of carbohydrates in grams"
-              />
-            </View>
-            <View style={styles.macroInput}>
-              <Text style={[styles.label, { color: colors.text }]}>Fat (g)</Text>
-              <TextInput
-                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                value={fat}
-                onChangeText={setFat}
-                placeholder="0"
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="numeric"
-                accessibilityLabel="Fat Input Field"
-                accessibilityHint="Enter the amount of fat in grams"
-              />
-            </View>
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.card, color: colors.text }]}
+            placeholder="Protein (optional)"
+            placeholderTextColor={colors.textSecondary}
+            value={protein}
+            onChangeText={setProtein}
+            keyboardType="numeric"
+          />
+
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.card, color: colors.text }]}
+            placeholder="Carbs (optional)"
+            placeholderTextColor={colors.textSecondary}
+            value={carbs}
+            onChangeText={setCarbs}
+            keyboardType="numeric"
+          />
+
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.card, color: colors.text }]}
+            placeholder="Fat (optional)"
+            placeholderTextColor={colors.textSecondary}
+            value={fat}
+            onChangeText={setFat}
+            keyboardType="numeric"
+          />
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.cameraButton, { backgroundColor: colors.card }]}
+              onPress={() => setIsCameraVisible(true)}
+            >
+              <Ionicons name="camera" size={24} color={colors.primary} />
+              <Text style={[styles.buttonText, { color: colors.text }]}>Scan with Camera</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.voiceButton, { backgroundColor: colors.card }]}
+              onPress={() => setIsVoiceModalVisible(true)}
+            >
+              <Ionicons name="mic" size={24} color={colors.primary} />
+              <Text style={[styles.buttonText, { color: colors.text }]}>Voice Log</Text>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
-            style={[styles.saveButton, { backgroundColor: colors.primary }]}
+            style={[styles.addButton, { backgroundColor: colors.primary }]}
             onPress={handleAddMeal}
-            disabled={isLoading}
-            accessibilityRole="button"
-            accessibilityLabel="Save Meal"
-            accessibilityHint="Saves the meal entry"
+            disabled={isLoading || !mealType || !mealName || !calories}
           >
             {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={colors.background} />
             ) : (
-              <Text style={styles.saveButtonText}>Save Meal</Text>
+              <Text style={styles.addButtonText}>Add Meal</Text>
             )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
 
+      {/* Meal Type Modal */}
       <Modal
         visible={isMealTypeModalVisible}
-        transparent
         animationType="slide"
-        onRequestClose={() => setIsMealTypeModalVisible(false)}
+        transparent={true}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <View style={styles.modalContainer}>
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>
-              Select Meal Type
-            </Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Select Meal Type</Text>
             <FlatList
               data={MEAL_TYPES}
               renderItem={renderMealTypeItem}
               keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
+              style={styles.mealTypeList}
             />
-            <TouchableOpacity
-              style={[styles.modalButton, { backgroundColor: colors.border }]}
-              onPress={() => setIsMealTypeModalVisible(false)}
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-              accessibilityHint="Closes the meal type selection modal"
-            >
-              <Text style={[styles.modalButtonText, { color: colors.text }]}>
-                Close
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
+      {/* Camera Modal */}
       <Modal
         visible={isCameraVisible}
-        transparent
         animationType="slide"
-        onRequestClose={() => setIsCameraVisible(false)}
+        transparent={true}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          <View style={[styles.cameraContainer, { backgroundColor: colors.card }]}>
-            <Camera
-              ref={cameraRef}
-              style={styles.camera}
-              type={Camera.Constants.Type.back}
-            >
-              <View style={styles.cameraButtons}>
-                <TouchableOpacity
-                  style={[styles.cameraButton, { backgroundColor: colors.primary }]}
-                  onPress={handleTakePicture}
-                  accessibilityRole="button"
-                  accessibilityLabel="Take Picture"
-                  accessibilityHint="Captures the current camera view"
-                >
-                  <Ionicons name="camera" size={32} color="#FFFFFF" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.cameraButton, { backgroundColor: colors.error }]}
-                  onPress={() => setIsCameraVisible(false)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close Camera"
-                  accessibilityHint="Closes the camera view"
-                >
-                  <Ionicons name="close" size={32} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            </Camera>
-          </View>
+        <View style={styles.cameraContainer}>
+          <Camera
+            ref={cameraRef}
+            style={styles.camera}
+            type={Camera.Constants.Type.Back}
+          >
+            <View style={styles.cameraControls}>
+              <TouchableOpacity
+                style={[styles.cameraButton, { backgroundColor: colors.card }]}
+                onPress={handleTakePicture}
+              >
+                <Ionicons name="camera" size={24} color={colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.cancelButton, { backgroundColor: colors.card }]}
+                onPress={() => setIsCameraVisible(false)}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+          </Camera>
         </View>
       </Modal>
 
+      {/* Voice Modal */}
       <Modal
         visible={isVoiceModalVisible}
-        transparent
         animationType="slide"
-        onRequestClose={() => setIsVoiceModalVisible(false)}
+        transparent={true}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          <View style={[styles.voiceContainer, { backgroundColor: colors.card }]}>
-            <Text style={[styles.voiceTitle, { color: colors.text }]}>
-              Voice Log Meal
-            </Text>
-            <View style={styles.voiceContent}>
-              <Ionicons
-                name={isRecording ? "mic" : "mic-outline"}
-                size={64}
-                color={colors.primary}
-              />
-              <Text style={[styles.voiceText, { color: colors.text }]}>
-                {isRecording ? "Recording..." : "Tap to start recording"}
-              </Text>
-            </View>
-            <View style={styles.voiceButtons}>
-              <TouchableOpacity
-                style={[styles.voiceButton, { backgroundColor: colors.primary }]}
-                onPress={handleVoiceLog}
-                disabled={isRecording}
-                accessibilityRole="button"
-                accessibilityLabel={isRecording ? "Recording" : "Start Recording"}
-                accessibilityHint={isRecording ? "Currently recording" : "Starts voice recording"}
-              >
-                <Text style={styles.voiceButtonText}>
-                  {isRecording ? "Recording..." : "Start Recording"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.voiceButton, { backgroundColor: colors.error }]}
-                onPress={() => setIsVoiceModalVisible(false)}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel"
-                accessibilityHint="Closes the voice recording modal"
-              >
-                <Text style={styles.voiceButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Voice Log</Text>
+            <TouchableOpacity
+              style={[styles.voiceButton, { backgroundColor: colors.primary }]}
+              onPress={handleVoiceLog}
+            >
+              <Ionicons name="mic" size={24} color={colors.background} />
+              <Text style={styles.buttonText}>Start Recording</Text>
+            </TouchableOpacity>
+            {isRecording && (
+              <ActivityIndicator style={styles.recordingIndicator} color={colors.primary} />
+            )}
           </View>
         </View>
       </Modal>
 
+      {/* AI Result Modal */}
       <Modal
         visible={isAIResultModalVisible}
-        transparent
         animationType="slide"
-        onRequestClose={() => setIsAIResultModalVisible(false)}
+        transparent={true}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          <View style={[styles.aiResultContainer, { backgroundColor: colors.card }]}>
-            <Text style={[styles.aiResultTitle, { color: colors.text }]}>
-              AI Recognition Result
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>AI Suggestion</Text>
+            <Text style={[styles.aiResultText, { color: colors.text }]}>
+              {aiResult?.name}
             </Text>
-            {aiResult && (
-              <View style={styles.aiResultContent}>
-                <Text style={[styles.aiResultText, { color: colors.text }]}>
-                  Name: {aiResult.name}
-                </Text>
-                <Text style={[styles.aiResultText, { color: colors.text }]}>
-                  Calories: {aiResult.calories}
-                </Text>
-                <Text style={[styles.aiResultText, { color: colors.text }]}>
-                  Protein: {aiResult.protein}g
-                </Text>
-                <Text style={[styles.aiResultText, { color: colors.text }]}>
-                  Carbs: {aiResult.carbs}g
-                </Text>
-                <Text style={[styles.aiResultText, { color: colors.text }]}>
-                  Fat: {aiResult.fat}g
-                </Text>
-              </View>
-            )}
-            <View style={styles.aiResultButtons}>
-              <TouchableOpacity
-                style={[styles.aiResultButton, { backgroundColor: colors.primary }]}
-                onPress={handleApplyAIResult}
-                accessibilityRole="button"
-                accessibilityLabel="Apply Result"
-                accessibilityHint="Applies the AI recognition result to the form"
-              >
-                <Text style={styles.aiResultButtonText}>Apply</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.aiResultButton, { backgroundColor: colors.error }]}
-                onPress={() => setIsAIResultModalVisible(false)}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel"
-                accessibilityHint="Closes the AI result modal"
-              >
-                <Text style={styles.aiResultButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={[styles.aiResultText, { color: colors.textSecondary }]}>Calories: {aiResult?.calories} kcal</Text>
+            <Text style={[styles.aiResultText, { color: colors.textSecondary }]}>Protein: {aiResult?.protein} g</Text>
+            <Text style={[styles.aiResultText, { color: colors.textSecondary }]}>Carbs: {aiResult?.carbs} g</Text>
+            <Text style={[styles.aiResultText, { color: colors.textSecondary }]}>Fat: {aiResult?.fat} g</Text>
+            <TouchableOpacity
+              style={[styles.applyButton, { backgroundColor: colors.primary }]}
+              onPress={handleApplyAIResult}
+            >
+              <Text style={[styles.buttonText, { color: colors.background }]}>
+                Apply Suggestion
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -484,230 +363,122 @@ const styles = StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  form: {
-    padding: 16,
-  },
-  aiButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  aiButton: {
+  content: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    borderRadius: 8,
-    marginHorizontal: 4,
-  },
-  aiButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+    padding: 16,
   },
   mealTypeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
+    padding: 12,
     borderRadius: 8,
     marginBottom: 16,
   },
-  mealTypeButtonText: {
+  mealTypeText: {
     fontSize: 16,
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    fontWeight: '500',
+    textAlign: 'center',
   },
   input: {
-    height: 48,
-    borderWidth: 1,
+    height: 50,
+    padding: 12,
     borderRadius: 8,
-    paddingHorizontal: 12,
+    marginBottom: 16,
     fontSize: 16,
   },
-  macrosContainer: {
+  buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 16,
     marginBottom: 16,
   },
-  macroInput: {
+  cameraButton: {
     flex: 1,
-    marginHorizontal: 4,
-  },
-  saveButton: {
-    height: 48,
+    padding: 12,
     borderRadius: 8,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 24,
+    justifyContent: 'center',
+    gap: 8,
   },
-  saveButtonText: {
-    color: '#FFFFFF',
+  voiceButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  buttonText: {
     fontSize: 16,
-    fontWeight: '600',
+  },
+  addButton: {
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  addButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   modalContainer: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: '80%',
-    maxHeight: '80%',
-    padding: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    width: '90%',
+    borderRadius: 16,
+    padding: 16,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
   },
   mealTypeItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 6,
     marginBottom: 8,
   },
-  mealTypeText: {
+  mealTypeName: {
     fontSize: 16,
-    fontWeight: '500',
+    textAlign: 'center',
   },
-  modalButton: {
-    height: 48,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  modalButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  mealTypeList: {
+    maxHeight: 300,
   },
   cameraContainer: {
     flex: 1,
-    width: '100%',
-    overflow: 'hidden',
+    backgroundColor: 'black',
   },
   camera: {
     flex: 1,
   },
-  cameraButtons: {
-    position: 'absolute',
-    bottom: 20,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cameraButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 16,
-  },
-  voiceContainer: {
-    width: '80%',
-    padding: 20,
-    borderRadius: 12,
-  },
-  voiceTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  voiceContent: {
-    alignItems: 'center',
-    marginVertical: 32,
-  },
-  voiceText: {
-    fontSize: 16,
-    marginTop: 16,
-  },
-  voiceButtons: {
+  cameraControls: {
+    flex: 1,
+    backgroundColor: 'transparent',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    padding: 16,
   },
-  voiceButton: {
-    flex: 1,
-    height: 48,
+  cancelButton: {
+    padding: 12,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 8,
   },
-  voiceButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  aiResultContainer: {
-    width: '80%',
-    padding: 20,
-    borderRadius: 12,
-  },
-  aiResultTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  aiResultContent: {
-    marginVertical: 16,
+  recordingIndicator: {
+    marginTop: 16,
   },
   aiResultText: {
     fontSize: 16,
     marginBottom: 8,
+    textAlign: 'center',
   },
-  aiResultButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  aiResultButton: {
-    flex: 1,
-    height: 48,
+  applyButton: {
+    padding: 12,
     borderRadius: 8,
-    justifyContent: 'center',
+    marginTop: 16,
     alignItems: 'center',
-    marginHorizontal: 8,
   },
-  aiResultButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-}); 
+});

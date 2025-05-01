@@ -20,7 +20,9 @@ export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   Tabs: undefined;
-  AddMeal: undefined;
+  AddMeal: {
+    mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'water';
+  };
   BarcodeScanner: undefined;
   AIScan: undefined;
   VoiceLog: undefined;
