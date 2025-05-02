@@ -13,6 +13,7 @@ import AIScanScreen from '../screens/AIScanScreen';
 import VoiceLogScreen from '../screens/VoiceLogScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import LanguageScreen from '../screens/LanguageScreen';
+import MealPlanScreen from '@/screens/MealPlanScreen';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -73,6 +74,15 @@ export default function AppNavigator() {
               options={{
                 headerShown: false,
                 animation: 'fade',
+              }}
+            />
+            <Stack.Screen
+              name="MealPlan"
+              component={MealPlanScreen}
+              options={{
+                title: 'Meal Plan',
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
               }}
             />
             <Stack.Screen

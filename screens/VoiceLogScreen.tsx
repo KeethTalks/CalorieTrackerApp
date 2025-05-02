@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase-config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import * as Speech from 'expo-speech';
+import { Audio } from 'expo-av'; // Import expo-av
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -29,49 +29,87 @@ export default function VoiceLogScreen({ navigation }: VoiceLogScreenProps) {
   const { user } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
   const handleStartRecording = async () => {
     if (!user) return;
 
-    try {
-      setIsRecording(true);
-      setIsProcessing(true);
+    if (Platform.OS === 'web') {
+      Alert.alert('Error', 'Voice logging is not supported on the web.');
+      return;
+    }
 
-      // Mock voice recognition - replace with actual speech-to-text service
-      const mockTranscription = "I had a chicken salad for lunch with 350 calories";
-      
-      // Mock AI analysis - replace with actual AI service integration
-      const mockAnalysis = {
-        name: "Chicken Salad",
-        calories: 350,
-        protein: 25,
-        carbs: 15,
-        fat: 20
-      };
+    if (isRecording) {
+      // Stop recording
+      try {
+        setIsProcessing(true);
+        await recording?.stopAndUnloadAsync();
+        const uri = recording?.getURI();
+        setRecording(null);
+        setIsRecording(false);
 
-      // Save to Firestore
-      await addDoc(collection(db, 'meals'), {
-        name: mockAnalysis.name,
-        calories: mockAnalysis.calories,
-        protein: mockAnalysis.protein,
-        carbs: mockAnalysis.carbs,
-        fat: mockAnalysis.fat,
-        mealType: "voice",
-        timestamp: serverTimestamp(),
-        userId: user.uid,
-        transcription: mockTranscription
-      });
+        if (uri) {
+          // Mock speech-to-text result
+          const mockTranscription = "I had a chicken salad for lunch with 350 calories";
+          
+          const mockAnalysis = {
+            name: "Chicken Salad",
+            calories: 350,
+            protein: 25,
+            carbs: 15,
+            fat: 20,
+          };
 
-      Alert.alert(
-        "Success",
-        "Meal logged successfully!",
-        [{ text: "OK", onPress: () => navigation.goBack() }]
-      );
-    } catch (error) {
-      Alert.alert("Error", "Failed to process voice input. Please try again.");
-    } finally {
-      setIsRecording(false);
-      setIsProcessing(false);
+          // Save to Firestore
+          await addDoc(collection(db, 'meals'), {
+            name: mockAnalysis.name,
+            calories: mockAnalysis.calories,
+            protein: mockAnalysis.protein,
+            carbs: mockAnalysis.carbs,
+            fat: mockAnalysis.fat,
+            mealType: "voice",
+            timestamp: serverTimestamp(),
+            userId: user.uid,
+            transcription: mockTranscription,
+          });
+
+          Alert.alert(
+            "Success",
+            "Meal logged successfully!",
+            [{ text: "OK", onPress: () => navigation.goBack() }]
+          );
+        } else {
+          Alert.alert('Error', 'Failed to record audio.');
+        }
+      } catch (error) {
+        console.error('Error stopping recording:', error);
+        Alert.alert('Error', 'Failed to stop recording.');
+      } finally {
+        setIsProcessing(false);
+      }
+    } else {
+      // Start recording
+      try {
+        const { status } = await Audio.requestPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Error', 'Microphone permission is required to record voice.');
+          return;
+        }
+
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+
+        const newRecording = new Audio.Recording();
+        await newRecording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+        await newRecording.startAsync();
+        setRecording(newRecording);
+        setIsRecording(true);
+      } catch (error) {
+        console.error('Error starting recording:', error);
+        Alert.alert('Error', 'Failed to start recording.');
+      }
     }
   };
 
@@ -80,7 +118,14 @@ export default function VoiceLogScreen({ navigation }: VoiceLogScreenProps) {
       <View style={styles.header}>
         <TouchableOpacity
           style={[styles.backButton, { backgroundColor: colors.card }]}
-          onPress={() => navigation.goBack()}
+          onPress={async () => {
+            if (isRecording) {
+              await recording?.stopAndUnloadAsync();
+              setRecording(null);
+              setIsRecording(false);
+            }
+            navigation.goBack();
+          }}
           accessibilityRole="button"
           accessibilityLabel="Go back"
           accessibilityHint="Returns to the previous screen"
@@ -98,7 +143,7 @@ export default function VoiceLogScreen({ navigation }: VoiceLogScreenProps) {
           style={[
             styles.button,
             { backgroundColor: colors.primary },
-            (isRecording || isProcessing) && styles.buttonDisabled
+            (isRecording || isProcessing) && styles.buttonDisabled,
           ]}
           onPress={handleStartRecording}
           disabled={isRecording || isProcessing}
@@ -111,12 +156,12 @@ export default function VoiceLogScreen({ navigation }: VoiceLogScreenProps) {
           ) : (
             <>
               <Ionicons 
-                name={isRecording ? "mic" : "mic-outline"} 
+                name={isRecording ? "stop" : "mic"} 
                 size={24} 
                 color="#FFFFFF" 
               />
               <Text style={styles.buttonText}>
-                {isRecording ? "Recording..." : "Start Recording"}
+                {isRecording ? "Stop Recording" : "Start Recording"}
               </Text>
             </>
           )}
@@ -200,4 +245,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: 'italic',
   },
-}); 
+});

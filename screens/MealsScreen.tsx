@@ -186,7 +186,7 @@ const MealsScreen: React.FC<MealsScreenProps> = ({ navigation }) => {
             style={[styles.addButton, { backgroundColor: colors.primary }]}
             onPress={() => {
               console.log("Navigating to AddMeal from MealsScreen"); // Debug log
-              navigation.navigate('AddMeal');
+              navigation.navigate('AddMeal', { mealType: 'breakfast' });
             }}
             accessibilityRole="button"
             accessibilityLabel="Add new meal"

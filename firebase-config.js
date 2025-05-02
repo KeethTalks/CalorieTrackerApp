@@ -1,9 +1,9 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore'; // Add initializeFirestore
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import { enableIndexedDbPersistence } from 'firebase/firestore';
+import { CACHE_SIZE_UNLIMITED } from 'firebase/firestore'; // Add CACHE_SIZE_UNLIMITED
 
 // Debug logging function
 const debugLog = (message, data = null) => {
@@ -63,27 +63,22 @@ try {
   throw error;
 }
 
-// Initialize Firebase services
+// Initialize Firestore with persistence settings
+const firestoreSettings = {
+  cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+};
+const db = initializeFirestore(firebaseApp, firestoreSettings);
+debugLog('Firestore initialized with settings:', firestoreSettings);
+
+// Initialize Firebase Auth
 const auth = getAuth(firebaseApp);
-const db = getFirestore(firebaseApp);
 debugLog('Firebase services initialized');
 
-// Enable persistence for web platform
+// Ensure auth state is properly initialized in web environment
 if (Platform.OS === 'web') {
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      debugLog('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-    } else if (err.code === 'unimplemented') {
-      debugLog('The current browser does not support persistence.');
-    } else {
-      debugLog('Error enabling persistence:', err);
-    }
-  });
-
-  // Ensure auth state is properly initialized in web environment
   auth.onAuthStateChanged((user) => {
     debugLog('Auth state changed:', user ? 'User signed in' : 'No user');
   });
 }
 
-export { firebaseApp, auth, db }; 
+export { firebaseApp, auth, db };

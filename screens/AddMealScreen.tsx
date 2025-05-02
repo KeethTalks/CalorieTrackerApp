@@ -18,9 +18,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase-config';
-import * as Speech from 'expo-speech';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { BottomTabParamList } from '../navigation/BottomTabs';
+import Webcam from 'react-webcam';
+import { Audio } from 'expo-av';
 
 // Conditionally import Camera only on mobile platforms
 let Camera: any = null;
@@ -43,6 +44,7 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
   const { colors } = useTheme();
   const [mealType, setMealType] = useState(route.params?.mealType || '');
   const [mealName, setMealName] = useState('');
+  const [mealTranscription, setMealTranscription] = useState(''); // Add state for transcription
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
@@ -55,6 +57,8 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
   const [isAIResultModalVisible, setIsAIResultModalVisible] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
   const cameraRef = useRef<any>(null);
+  const webcamRef = useRef<Webcam>(null);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
   useEffect(() => {
     if (route.params?.mealType) {
@@ -80,6 +84,7 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
         carbs: parseFloat(carbs) || 0,
         fat: parseFloat(fat) || 0,
         timestamp: serverTimestamp(),
+        transcription: mealTranscription, // Save transcription
       });
 
       Alert.alert('Success', 'Meal added successfully');
@@ -94,39 +99,11 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
 
   const handleTakePicture = async () => {
     if (Platform.OS === 'web') {
-      Alert.alert('Error', 'Camera scanning is not supported on the web.');
-      return;
-    }
-
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Error', 'Camera permission is required to scan meals.');
-      return;
-    }
-
-    if (cameraRef.current) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync();
-        const mockResult = {
-          name: "Turkey Sandwich",
-          calories: 350,
-          protein: 20,
-          carbs: 30,
-          fat: 10,
-        };
-        setAiResult(mockResult);
-        setIsCameraVisible(false);
-        setIsAIResultModalVisible(true);
-      } catch (error) {
-        console.error('Error taking picture:', error);
-        Alert.alert('Error', 'Failed to take picture');
+      const imageSrc = webcamRef.current?.getScreenshot();
+      if (!imageSrc) {
+        Alert.alert('Error', 'Failed to capture image from webcam.');
+        return;
       }
-    }
-  };
-
-  const handleVoiceLog = async () => {
-    try {
-      setIsRecording(true);
       const mockResult = {
         name: "Turkey Sandwich",
         calories: 350,
@@ -135,13 +112,96 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
         fat: 10,
       };
       setAiResult(mockResult);
-      setIsVoiceModalVisible(false);
+      setIsCameraVisible(false);
       setIsAIResultModalVisible(true);
-    } catch (error) {
-      console.error('Error recording voice:', error);
-      Alert.alert('Error', 'Failed to record voice');
-    } finally {
-      setIsRecording(false);
+    } else {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Error', 'Camera permission is required to scan meals.');
+        return;
+      }
+
+      if (cameraRef.current) {
+        try {
+          const photo = await cameraRef.current.takePictureAsync();
+          const mockResult = {
+            name: "Turkey Sandwich",
+            calories: 350,
+            protein: 20,
+            carbs: 30,
+            fat: 10,
+          };
+          setAiResult(mockResult);
+          setIsCameraVisible(false);
+          setIsAIResultModalVisible(true);
+        } catch (error) {
+          console.error('Error taking picture:', error);
+          Alert.alert('Error', 'Failed to take picture');
+        }
+      }
+    }
+  };
+
+  const handleVoiceLog = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert('Error', 'Voice logging is not supported on the web.');
+      setIsVoiceModalVisible(false);
+      return;
+    }
+
+    if (isRecording) {
+      // Stop recording
+      try {
+        await recording?.stopAndUnloadAsync();
+        const uri = recording?.getURI();
+        setRecording(null);
+        setIsRecording(false);
+        setIsVoiceModalVisible(false);
+
+        if (uri) {
+          // Mock speech-to-text result
+          const mockTranscription = "I had a chicken salad for lunch with 350 calories";
+          setMealTranscription(mockTranscription);
+
+          const mockResult = {
+            name: "Chicken Salad",
+            calories: 350,
+            protein: 25,
+            carbs: 15,
+            fat: 20,
+          };
+          setAiResult(mockResult);
+          setIsAIResultModalVisible(true);
+        } else {
+          Alert.alert('Error', 'Failed to record audio.');
+        }
+      } catch (error) {
+        console.error('Error stopping recording:', error);
+        Alert.alert('Error', 'Failed to stop recording.');
+      }
+    } else {
+      // Start recording
+      try {
+        const { status } = await Audio.requestPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Error', 'Microphone permission is required to record voice.');
+          return;
+        }
+
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+
+        const newRecording = new Audio.Recording();
+        await newRecording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+        await newRecording.startAsync();
+        setRecording(newRecording);
+        setIsRecording(true);
+      } catch (error) {
+        console.error('Error starting recording:', error);
+        Alert.alert('Error', 'Failed to start recording.');
+      }
     }
   };
 
@@ -293,7 +353,33 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
         transparent={true}
       >
         <View style={styles.cameraContainer}>
-          {Platform.OS !== 'web' && Camera ? (
+          {Platform.OS === 'web' ? (
+            <View style={styles.webcamContainer}>
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                style={styles.webcam}
+                videoConstraints={{
+                  facingMode: 'environment',
+                }}
+              />
+              <View style={styles.cameraControls}>
+                <TouchableOpacity
+                  style={[styles.cameraButton, { backgroundColor: colors.card }]}
+                  onPress={handleTakePicture}
+                >
+                  <Ionicons name="camera" size={24} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.cancelButton, { backgroundColor: colors.card }]}
+                  onPress={() => setIsCameraVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : Camera ? (
             <Camera
               ref={cameraRef}
               style={styles.camera}
@@ -339,16 +425,34 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
         <View style={styles.modalContainer}>
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Voice Log</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Describe your meal and we'll log it for you
+            </Text>
             <TouchableOpacity
               style={[styles.voiceButton, { backgroundColor: colors.primary }]}
               onPress={handleVoiceLog}
             >
-              <Ionicons name="mic" size={24} color={colors.background} />
-              <Text style={styles.buttonText}>Start Recording</Text>
+              <Ionicons name={isRecording ? "stop" : "mic"} size={24} color={colors.background} />
+              <Text style={styles.buttonText}>{isRecording ? "Stop Recording" : "Start Recording"}</Text>
             </TouchableOpacity>
             {isRecording && (
-              <ActivityIndicator style={styles.recordingIndicator} color={colors.primary} />
+              <Text style={[styles.recordingText, { color: colors.textSecondary }]}>
+                Speak now...
+              </Text>
             )}
+            <TouchableOpacity
+              style={[styles.cancelButton, { backgroundColor: colors.card }]}
+              onPress={async () => {
+                if (isRecording) {
+                  await recording?.stopAndUnloadAsync();
+                  setRecording(null);
+                  setIsRecording(false);
+                }
+                setIsVoiceModalVisible(false);
+              }}
+            >
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -464,6 +568,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
   mealTypeItem: {
     padding: 12,
     borderRadius: 6,
@@ -479,6 +588,14 @@ const styles = StyleSheet.create({
   cameraContainer: {
     flex: 1,
     backgroundColor: 'black',
+  },
+  webcamContainer: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
+  webcam: {
+    flex: 1,
+    width: '100%',
   },
   camera: {
     flex: 1,
@@ -504,9 +621,12 @@ const styles = StyleSheet.create({
   cancelButton: {
     padding: 12,
     borderRadius: 8,
-  },
-  recordingIndicator: {
     marginTop: 16,
+  },
+  recordingText: {
+    marginTop: 16,
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   aiResultText: {
     fontSize: 16,
