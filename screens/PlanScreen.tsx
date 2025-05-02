@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Modal,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
@@ -14,8 +14,11 @@ import { db } from '../firebase-config';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { format, addDays, subDays, isToday, isYesterday, isTomorrow } from 'date-fns';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
-import DateTimePicker from 'react-native-modal-datetime-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { BottomTabParamList } from '../navigation/BottomTabs';
+import DateTimePicker from 'react-native-modal-datetime-picker'; // Re-import DateTimePicker
 
 type Meal = {
   id: string;
@@ -42,15 +45,15 @@ const MEAL_CONTAINERS: MealContainer[] = [
   { type: 'water', icon: 'water-outline', label: 'Water' },
 ];
 
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/AppNavigator';
+type NavigationProp = BottomTabNavigationProp<BottomTabParamList, 'Plan'>;
 
-export default function PlanScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
+export default function PlanScreen() {
   const { colors } = useTheme();
+  const navigation = useNavigation<NavigationProp>();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [meals, setMeals] = useState<Meal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDatePickerVisible, setDatePickerVisible] = useState(false);
+  const [isDatePickerVisible, setDatePickerVisible] = useState(false); // Re-add state for DateTimePicker
 
   useEffect(() => {
     fetchMeals();
@@ -134,11 +137,29 @@ export default function PlanScreen({ navigation }: { navigation: NativeStackNavi
               <Ionicons name="chevron-back-outline" size={24} color={colors.text} />
             </TouchableOpacity>
             
-            <TouchableOpacity onPress={() => setDatePickerVisible(true)}>
-              <Text style={[styles.dateText, { color: colors.text }]}>
-                {getDateDisplay()}
-              </Text>
-            </TouchableOpacity>
+            {Platform.OS === 'web' ? (
+              <input
+                type="date"
+                value={selectedDate.toISOString().split('T')[0]}
+                onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                style={{
+                  padding: 8,
+                  borderRadius: 8,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  color: colors.text,
+                  backgroundColor: colors.card,
+                  fontSize: 20,
+                  fontWeight: 'bold',
+                }}
+              />
+            ) : (
+              <TouchableOpacity onPress={() => setDatePickerVisible(true)}>
+                <Text style={[styles.dateText, { color: colors.text }]}>
+                  {getDateDisplay()}
+                </Text>
+              </TouchableOpacity>
+            )}
             
             <TouchableOpacity onPress={handleSwipeRight}>
               <Ionicons name="chevron-forward-outline" size={24} color={colors.text} />
@@ -169,7 +190,8 @@ export default function PlanScreen({ navigation }: { navigation: NativeStackNavi
                 </View>
                 <TouchableOpacity
                   onPress={() => {
-                    navigation.getParent()?.navigate('AddMeal', { mealType: container.type });
+                    console.log(`Navigating to AddMeal tab for ${container.type}`);
+                    navigation.navigate('AddMeal', { mealType: container.type });
                   }}
                   accessibilityLabel={`Add ${container.label} meal`}
                   accessibilityHint={`Navigates to add a ${container.label} meal`}
@@ -198,13 +220,15 @@ export default function PlanScreen({ navigation }: { navigation: NativeStackNavi
           ))}
         </ScrollView>
 
-        <DateTimePicker
-          isVisible={isDatePickerVisible}
-          mode="date"
-          onConfirm={handleDateChange}
-          onCancel={() => setDatePickerVisible(false)}
-          date={selectedDate}
-        />
+        {Platform.OS !== 'web' && (
+          <DateTimePicker
+            isVisible={isDatePickerVisible}
+            mode="date"
+            onConfirm={handleDateChange}
+            onCancel={() => setDatePickerVisible(false)}
+            date={selectedDate}
+          />
+        )}
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -282,4 +306,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 8,
   },
-}); 
+});

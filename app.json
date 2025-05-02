@@ -52,5 +52,6 @@
         "appId": "@FIREBASE_APP_ID"
       }
     }
+    "permissions": ["camera"]
   }
 }

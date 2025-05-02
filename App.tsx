@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -8,11 +8,9 @@ import Constants from 'expo-constants';
 import './firebase-config';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { FirebaseTest } from './components/FirebaseTest';
 
-// Import navigation and screens
+// Import navigation
 import AppNavigator from './navigation/AppNavigator';
-import LoadingScreen from './screens/LoadingScreen';
 
 // Error Fallback component
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
@@ -48,23 +46,18 @@ export default function App() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Validate environment variables
         if (!Constants.expoConfig?.extra?.firebase) {
           throw new Error('Firebase configuration is missing. Please check your environment variables.');
         }
-        
-        // Log the Firebase config (without sensitive data)
         console.log('Firebase Config:', {
           ...Constants.expoConfig.extra.firebase,
           apiKey: '[REDACTED]'
         });
-        
         setIsReady(true);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to initialize app'));
       }
     };
-
     initializeApp();
   }, []);
 

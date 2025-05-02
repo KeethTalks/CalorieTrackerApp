@@ -8,28 +8,23 @@ import BottomTabs from './BottomTabs';
 // Import screens
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
-import AddMealScreen from '../screens/AddMealScreen';
 import BarcodeScannerScreen from '../screens/BarcodeScannerScreen';
 import AIScanScreen from '../screens/AIScanScreen';
 import VoiceLogScreen from '../screens/VoiceLogScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import LanguageScreen from '../screens/LanguageScreen';
-import { BottomTabParamList } from './BottomTabs';
 
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   Tabs: undefined;
-  AddMeal: {
-    mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'water';
-  };
   BarcodeScanner: undefined;
   AIScan: undefined;
   VoiceLog: undefined;
   EditProfile: undefined;
   Language: undefined;
   MealPlan: undefined;
-} & BottomTabParamList;
+};
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -78,15 +73,6 @@ export default function AppNavigator() {
               options={{
                 headerShown: false,
                 animation: 'fade',
-              }}
-            />
-            <Stack.Screen
-              name="AddMeal"
-              component={AddMealScreen}
-              options={{
-                title: 'Add Meal',
-                presentation: 'modal',
-                animation: 'slide_from_bottom',
               }}
             />
             <Stack.Screen

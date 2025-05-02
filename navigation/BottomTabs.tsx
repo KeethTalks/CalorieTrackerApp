@@ -13,15 +13,17 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 // Import screens
 import HomeScreen from '../screens/HomeScreen';
 import MealsScreen from '../screens/MealsScreen';
+import AddMealScreen from '../screens/AddMealScreen';
 import PlanScreen from '../screens/PlanScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import AddMealScreen from '../screens/AddMealScreen';
 
 export type BottomTabParamList = {
   Home: undefined;
   Meals: undefined;
-  AddMeal: undefined;
+  AddMeal: {
+    mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'water';
+  };
   Plan: undefined;
   Profile: undefined;
   Settings: undefined;
@@ -31,7 +33,6 @@ const Tab = createBottomTabNavigator<BottomTabParamList>();
 
 export default function BottomTabs() {
   const { colors } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <Tab.Navigator
@@ -91,18 +92,6 @@ export default function BottomTabs() {
           tabBarLabel: 'Add Meal',
           tabBarAccessibilityLabel: 'Add Meal Screen'
         }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            const parent = navigation.getParent();
-            if (parent) {
-              parent.navigate({
-                name: 'Tabs',
-                params: { screen: 'AddMeal' }
-              });
-            }
-          }
-        })}
       />
       <Tab.Screen
         name="Plan"

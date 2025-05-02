@@ -18,10 +18,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase-config';
-import { Camera } from 'expo-camera';
 import * as Speech from 'expo-speech';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { BottomTabParamList } from '../navigation/BottomTabs';
+
+// Conditionally import Camera only on mobile platforms
+let Camera: any = null;
+if (Platform.OS !== 'web') {
+  Camera = require('expo-camera').Camera;
+}
 
 const MEAL_TYPES = [
   { id: 'breakfast', name: 'Breakfast' },
@@ -31,7 +36,7 @@ const MEAL_TYPES = [
   { id: 'water', name: 'Water' },
 ];
 
-type AddMealScreenProps = NativeStackScreenProps<RootStackParamList, 'AddMeal'>;
+type AddMealScreenProps = BottomTabScreenProps<BottomTabParamList, 'AddMeal'>;
 
 export default function AddMealScreen({ navigation, route }: AddMealScreenProps) {
   const { user } = useAuth();
@@ -49,7 +54,7 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
   const [isRecording, setIsRecording] = useState(false);
   const [isAIResultModalVisible, setIsAIResultModalVisible] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
-  const cameraRef = useRef<Camera>(null);
+  const cameraRef = useRef<any>(null);
 
   useEffect(() => {
     if (route.params?.mealType) {
@@ -78,7 +83,7 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
       });
 
       Alert.alert('Success', 'Meal added successfully');
-      navigation.goBack();
+      navigation.navigate('Home');
     } catch (error) {
       console.error('Error adding meal:', error);
       Alert.alert('Error', 'Failed to add meal');
@@ -88,10 +93,20 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
   };
 
   const handleTakePicture = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert('Error', 'Camera scanning is not supported on the web.');
+      return;
+    }
+
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Error', 'Camera permission is required to scan meals.');
+      return;
+    }
+
     if (cameraRef.current) {
       try {
         const photo = await cameraRef.current.takePictureAsync();
-        // Mock AI recognition
         const mockResult = {
           name: "Turkey Sandwich",
           calories: 350,
@@ -112,7 +127,6 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
   const handleVoiceLog = async () => {
     try {
       setIsRecording(true);
-      // Mock voice recording and NLP
       const mockResult = {
         name: "Turkey Sandwich",
         calories: 350,
@@ -279,18 +293,32 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
         transparent={true}
       >
         <View style={styles.cameraContainer}>
-          <Camera
-            ref={cameraRef}
-            style={styles.camera}
-            type={Camera.Constants.Type.Back}
-          >
-            <View style={styles.cameraControls}>
-              <TouchableOpacity
-                style={[styles.cameraButton, { backgroundColor: colors.card }]}
-                onPress={handleTakePicture}
-              >
-                <Ionicons name="camera" size={24} color={colors.primary} />
-              </TouchableOpacity>
+          {Platform.OS !== 'web' && Camera ? (
+            <Camera
+              ref={cameraRef}
+              style={styles.camera}
+              type={Camera.Constants.Type.Back}
+            >
+              <View style={styles.cameraControls}>
+                <TouchableOpacity
+                  style={[styles.cameraButton, { backgroundColor: colors.card }]}
+                  onPress={handleTakePicture}
+                >
+                  <Ionicons name="camera" size={24} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.cancelButton, { backgroundColor: colors.card }]}
+                  onPress={() => setIsCameraVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+            </Camera>
+          ) : (
+            <View style={styles.cameraFallback}>
+              <Text style={[styles.fallbackText, { color: colors.text }]}>
+                Camera is not supported on this platform.
+              </Text>
               <TouchableOpacity
                 style={[styles.cancelButton, { backgroundColor: colors.card }]}
                 onPress={() => setIsCameraVisible(false)}
@@ -298,7 +326,7 @@ export default function AddMealScreen({ navigation, route }: AddMealScreenProps)
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
-          </Camera>
+          )}
         </View>
       </Modal>
 
@@ -462,6 +490,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     padding: 16,
+  },
+  cameraFallback: {
+    flex: 1,
+    backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fallbackText: {
+    fontSize: 16,
+    marginBottom: 16,
   },
   cancelButton: {
     padding: 12,
