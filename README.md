@@ -50,3 +50,6 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Development Notes
+- **Dependency Consistency**: Use `npm ci` instead of `npm install` to ensure dependencies are installed exactly as specified in `package-lock.json`. This prevents accidental updates and ensures consistency across development, testing, and production environments.

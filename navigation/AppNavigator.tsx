@@ -25,6 +25,7 @@ export type RootStackParamList = {
   EditProfile: undefined;
   Language: undefined;
   MealPlan: undefined;
+  Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

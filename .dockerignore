@@ -1,0 +1,11 @@
+node_modules
+.git
+.gitignore
+android
+ios
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+.DS_Store
+Thumbs.db
