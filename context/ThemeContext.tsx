@@ -11,6 +11,7 @@ export interface ThemeColors {
   success: string;
   warning: string;
   border: string;
+  notification: string;
 }
 
 type ThemeContextType = {
