@@ -50,6 +50,9 @@ GoogleService-Info.plist
 # Windows
 Thumbs.db
 
+# Functions .gitignore
+functions/.gitignore
+
 # IDE
 .idea/
 .vscode/
