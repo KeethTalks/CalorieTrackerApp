@@ -20,7 +20,8 @@ const logger = require("firebase-functions/logger");
 const functions = require("firebase-functions");
 const express = require("express");
 const cors = require("cors");
-const { processQuery, generateResponse } = require("../queryProcessor"); // Import RAG functions
+// Import RAG functions
+const {processQuery, generateResponse} = require("../queryProcessor");
 
 const app = express();
 app.use(express.json());
@@ -28,23 +29,23 @@ app.use(cors());
 
 // Endpoint to handle RAG queries
 app.post("/rag-query", async (req, res) => {
-    try {
-        const { query, namespace } = req.body;
-        if (!query || !namespace) {
-            return res.status(400).json({ error: "Missing query or namespace" });
-        }
-
-        // Retrieve relevant documents
-        const retrievedDocs = await processQuery(query, namespace);
-        
-        // Generate AI response
-        const aiResponse = await generateResponse(query, retrievedDocs);
-
-        res.json({ response: aiResponse });
-    } catch (error) {
-        console.error("Error processing RAG request:", error);
-        res.status(500).json({ error: "Internal server error" });
+  try {
+    const {query, namespace} = req.body;
+    if (!query || !namespace) {
+      return res.status(400).json({error: "Missing query or namespace"});
     }
+
+    // Retrieve relevant documents
+    const retrievedDocs = await processQuery(query, namespace);
+
+    // Generate AI response
+    const aiResponse = await generateResponse(query, retrievedDocs);
+
+    res.json({response: aiResponse});
+  } catch (error) {
+    console.error("Error processing RAG request:", error);
+    res.status(500).json({error: "Internal server error"});
+  }
 });
 
 // Expose API function
