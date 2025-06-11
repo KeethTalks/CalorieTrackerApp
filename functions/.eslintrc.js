@@ -16,7 +16,7 @@ module.exports = {
     "prefer-arrow-callback": "error",
     "quotes": ["error", "double", {"allowTemplateLiterals": true}],
     "no-unused-vars": "warn",
-    "no-console": "warn",    
+    "no-console": "warn",
   },
   overrides: [
     {

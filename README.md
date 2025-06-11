@@ -1,6 +1,6 @@
-# Welcome to My Expo app for GauntletAI 👋
+# Welcome to My Expo React Native app 👋
 
-I started the video lessons and this is my first attempt at making a Calorie Tracker AI App with a bunch of features!
+I'm building this as a learning experience. This is my first attempt at making a Calorie Tracker AI App with a bunch of features!
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 

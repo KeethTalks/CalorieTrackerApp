@@ -52,6 +52,7 @@ Thumbs.db
 
 # Functions .gitignore
 functions/.gitignore
+.vercel/
 
 # IDE
 .idea/
