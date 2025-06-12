@@ -45,7 +45,8 @@ GoogleService-Info.plist
 .env.*
 .env.local
 .env.*.local
-
+firebase.json
+.firebaserc
 
 # Windows
 Thumbs.db
