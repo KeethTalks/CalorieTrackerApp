@@ -2227,10 +2227,10 @@
   dependencies:
     "semver" "^7.3.5"
 
-"@pinecone-database/pinecone@^6.0.0":
-  "integrity" "sha512-Qicqb5G7g01vMqm/gPdB8mW/6HmNb87NWz5M4TMtyLAMHxTjbnm8sgnUL2/eCyY1Th55oobjpM65exTatFMQvA=="
-  "resolved" "https://registry.npmjs.org/@pinecone-database/pinecone/-/pinecone-6.0.0.tgz"
-  "version" "6.0.0"
+"@pinecone-database/pinecone@^6.1.0":
+  "integrity" "sha512-g+hOT5pA/lt0ICZ949aQPkF5u4TDWZtfbwV+25ewcYSF9o2EBQLdrxMKSIfkESSM5FyizBct0Caq4CSYu5fbIw=="
+  "resolved" "https://registry.npmjs.org/@pinecone-database/pinecone/-/pinecone-6.1.0.tgz"
+  "version" "6.1.0"
 
 "@pkgjs/parseargs@^0.11.0":
   "integrity" "sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg=="
@@ -3359,17 +3359,17 @@
     "big-integer" "1.6.x"
 
 "brace-expansion@^1.1.7":
-  "integrity" "sha512-iCuPHDFgrHX7H2vEI/5xpz07zSHB00TpugqhmYtVmMO6518mCuRMoOYFldEBl0g187ufozdaHgWKcYFb61qGiA=="
-  "resolved" "https://registry.npmjs.org/brace-expansion/-/brace-expansion-1.1.11.tgz"
-  "version" "1.1.11"
+  "integrity" "sha512-9T9UjW3r0UW5c1Q7GTwllptXwhvYmEzFhzMfZ9H7FQWt+uZePjZPjBP/W1ZEyZ1twGWom5/56TF4lPcqjnDHcg=="
+  "resolved" "https://registry.npmjs.org/brace-expansion/-/brace-expansion-1.1.12.tgz"
+  "version" "1.1.12"
   dependencies:
     "balanced-match" "^1.0.0"
     "concat-map" "0.0.1"
 
 "brace-expansion@^2.0.1":
-  "integrity" "sha512-XnAIvQ8eM+kC6aULx6wuQiwVsnzsi9d3WxzV3FpWTGA19F621kwdbsAcFKXgKUHZWsy+mY6iL1sHTxWEFCytDA=="
-  "resolved" "https://registry.npmjs.org/brace-expansion/-/brace-expansion-2.0.1.tgz"
-  "version" "2.0.1"
+  "integrity" "sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ=="
+  "resolved" "https://registry.npmjs.org/brace-expansion/-/brace-expansion-2.0.2.tgz"
+  "version" "2.0.2"
   dependencies:
     "balanced-match" "^1.0.0"
 

@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
-    "@pinecone-database/pinecone": "^6.0.0",
+    "@pinecone-database/pinecone": "^6.1.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
     "@react-navigation/native-stack": "^7.3.10",
