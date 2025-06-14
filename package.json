@@ -21,6 +21,8 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
+    "@langchain/community": "^0.3.46",
+    "@langchain/openai": "^0.5.13",
     "@pinecone-database/pinecone": "^6.1.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",

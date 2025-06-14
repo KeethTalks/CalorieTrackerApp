@@ -49,7 +49,9 @@ async function loadFoodData() {
         const text = `${item.name}: ${item.calories} calories, ${item.fat}g fat, ${item.carb}g carbs, ${item.protein}g protein`;
 
         // ✅ Generate OpenAI embeddings for the meal description
-        const embedding = await new OpenAIEmbeddings().embed_query(text);
+        console.log("🔍 Available methods:", Object.keys(new OpenAIEmbeddings()));
+        const embedding = await new OpenAIEmbeddings().embedQuery(text);
+        console.log("✅ Generated embedding for:", item.name);
 
         // ✅ Store vectorized data in Pinecone format
         vectors.push({
