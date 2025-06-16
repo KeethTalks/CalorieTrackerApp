@@ -86,6 +86,20 @@ async function loadFoodData() {
         throw new Error("❌ No valid vectors found for upload.");
     }
 
+    // --- START DEBUGGING ADDITIONS ---
+    console.log("\n--- Debugging Pinecone Upsert Payload ---");
+    console.log("Type of 'vectors' variable:", typeof vectors);
+    console.log("Is 'vectors' an array?", Array.isArray(vectors));
+    console.log("Number of vectors prepared:", vectors.length);
+
+    if (vectors.length > 0) {
+        console.log("Structure of first vector:", JSON.stringify(vectors[0], null, 2));
+        console.log("Type of values in first vector:", typeof vectors[0].values);
+        console.log("Length of values in first vector:", vectors[0].values?.length);
+    }
+    console.log("--- End Debugging ---");
+    // --- END DEBUGGING ADDITIONS ---
+
     // ✅ Upload data to Pinecone
     await index.upsert({ vectors, namespace });
 
